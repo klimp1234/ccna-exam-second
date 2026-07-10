@@ -1,0 +1,2326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Modules 8-10 Interactive Exam & Matcher</title>
+    <!-- Load React, ReactDOM, Babel, Tailwind CSS and FontAwesome -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;900&display=swap');
+        body { 
+            font-family: 'Inter', 'Tajawal', sans-serif; 
+            background: linear-gradient(135deg, #090d16 0%, #111827 100%);
+            color: #f3f4f6;
+            min-height: 100vh;
+        }
+        .glass-card { 
+            background: rgba(17, 24, 39, 0.8); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+        }
+        .progress-bar { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .matching-node {
+            transition: all 0.2s ease-in-out;
+        }
+        .terminal-box {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #05070b;
+            border: 1px solid #1e293b;
+        }
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -20;
+            }
+        }
+        .connecting-line {
+            stroke-dasharray: 5;
+            animation: dash 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="p-3 md:p-6 flex flex-col justify-between min-h-screen">
+    <div id="root" class="w-full max-w-5xl mx-auto"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const quizData = [
+            {
+                id: 1,
+                type: "single",
+                q: "Which information is used by routers to forward a data packet toward its destination?",
+                q_ar: "ما هي المعلومات التي تستخدمها الموجهات (Routers) لتوجيه حزمة البيانات نحو وجهتها؟",
+                options: ["source IP address", "destination IP address", "source data-link address", "destination data-link address"],
+                options_ar: ["عنوان IP المصدر", "عنوان IP الوجهة", "عنوان ربط البيانات المصدر (MAC)", "عنوان ربط البيانات الوجهة (MAC)"],
+                correct: [1],
+                explanation: "Routers examine the Layer 3 destination IP address of a packet to perform a route lookup in the routing table and determine the best exit interface.",
+                explanation_ar: "تقوم الموجهات بفحص عنوان IP الوجهة للطبقة الثالثة للحزمة لإجراء بحث عن المسار في جدول التوجيه وتحديد واجهة الخروج الأفضل."
+            },
+            {
+                id: 2,
+                type: "single",
+                q: "A computer has to send a packet to a destination host in the same LAN. How will the packet be sent?",
+                q_ar: "يجب على كمبيوتر إرسال حزمة إلى مضيف وجهة في نفس الشبكة المحلية (LAN). كيف سيتم إرسال الحزمة؟",
+                options: [
+                    "The packet will be sent to the default gateway first, and then, depending on the response from the gateway, it may be sent to the destination host.",
+                    "The packet will be sent directly to the destination host.",
+                    "The packet will first be sent to the default gateway, and then from the default gateway it will be sent directly to the destination host.",
+                    "The packet will be sent only to the default gateway."
+                ],
+                options_ar: [
+                    "سيتم إرسال الحزمة إلى البوابة الافتراضية أولاً، ثم بناءً على رد البوابة قد تُرسل للمضيف.",
+                    "سيتم إرسال الحزمة مباشرةً إلى المضيف الوجهة.",
+                    "سيتم إرسال الحزمة أولاً إلى البوابة الافتراضية، ومن ثم ستقوم البوابة بإرسالها للمضيف.",
+                    "سيتم إرسال الحزمة فقط إلى البوابة الافتراضية."
+                ],
+                correct: [1],
+                explanation: "If the destination host is in the same local network, the sender uses ARP/ND to discover the destination's MAC address and transmits the packet directly without going through a default gateway.",
+                explanation_ar: "إذا كان المضيف الوجهة في نفس الشبكة المحلية، يستخدم المرسل بروتوكول ARP أو ND لمعرفة عنوان MAC الخاص بالوجهة ويرسل الإطار مباشرة دون الحاجة للمرور عبر البوابة الافتراضية."
+            },
+            {
+                id: 3,
+                type: "single",
+                q: "A router receives a packet from the Gigabit 0/0 interface and determines that the packet needs to be forwarded out the Gigabit 0/1 interface. What will the router do next?",
+                q_ar: "يستقبل موجه حزمة من واجهة Gigabit 0/0 ويحدد أنه يجب إعادة توجيهها عبر واجهة Gigabit 0/1. ماذا سيفعل الموجه بعد ذلك؟",
+                options: [
+                    "route the packet out the Gigabit 0/1 interface",
+                    "create a new Layer 2 Ethernet frame to be sent to the destination",
+                    "look into the ARP cache to determine the destination IP address",
+                    "look into the routing table to determine if the destination network is in the routing table"
+                ],
+                options_ar: [
+                    "توجيه الحزمة مباشرة عبر منفذ Gigabit 0/1",
+                    "إنشاء إطار إيثرنت جديد (Layer 2 Frame) لإرساله إلى الوجهة التالية",
+                    "البحث في ذاكرة التخزين المؤقت لـ ARP (ARP cache) لتحديد عنوان IP الوجهة",
+                    "البحث في جدول التوجيه لتحديد ما إذا كانت شبكة الوجهةموجودة فيه"
+                ],
+                correct: [1],
+                explanation: "Before forwarding a packet out of an Ethernet interface, the router must encapsulate the Layer 3 packet into a brand new Layer 2 data link frame, containing the new source and destination MAC addresses.",
+                explanation_ar: "قبل إعادة توجيه حزمة خارج واجهة إيثرنت، يجب على الموجه إعادة تغليف حزمة الطبقة الثالثة داخل إطار ربط بيانات (Layer 2 Frame) جديد كلياً، يحتوي على عناوين MAC الجديدة للمصدر والوجهة التالية."
+            },
+            {
+                id: 4,
+                type: "single",
+                q: "Which IPv4 address can a host use to ping the loopback interface?",
+                q_ar: "ما هو عنوان IPv4 الذي يمكن للمضيف استخدامه لإرسال ping لواجهة الاختبار الذاتي (Loopback)؟",
+                options: ["126.0.0.1", "127.0.0.0", "126.0.0.0", "127.0.0.1"],
+                options_ar: ["126.0.0.1", "127.0.0.0", "126.0.0.0", "127.0.0.1"],
+                correct: [3],
+                explanation: "The address range 127.0.0.0/8 is reserved for loopback testing. 127.0.0.1 is the most commonly used loopback address to verify that the local TCP/IP stack is active.",
+                explanation_ar: "النطاق 127.0.0.0/8 محجوز لاختبارات الحلقة المغلقة (Loopback). العنوان 127.0.0.1 هو الأكثر استخداماً للتحقق من أن حزمة بروتوكولات TCP/IP تعمل بنجاح داخل المضيف."
+            },
+            {
+                id: 5,
+                type: "single",
+                q: "A computer can access devices on the same network but cannot access devices on other networks. What is the probable cause of this problem?",
+                q_ar: "يستطيع جهاز كمبيوتر الوصول إلى الأجهزة الموجودة في نفس الشبكة ولكنه لا يستطيع الوصول للشبكات الأخرى. ما السبب المحتمل لهذه المشكلة؟",
+                options: [
+                    "The cable is not connected properly to the NIC.",
+                    "The computer has an invalid IP address.",
+                    "The computer has an incorrect subnet mask.",
+                    "The computer has an invalid default gateway address."
+                ],
+                options_ar: [
+                    "الكابل غير متصل بشكل صحيح بكرت الشبكة (NIC).",
+                    "الكمبيوتر يمتلك عنوان IP غير صالح.",
+                    "الكمبيوتر يمتلك قناع شبكة فرعية (Subnet Mask) خاطئ.",
+                    "الكمبيوتر يمتلك عنوان بوابة افتراضية (Default Gateway) غير صالح أو خاطئ."
+                ],
+                correct: [3],
+                explanation: "The default gateway is the exit point for local hosts to communicate with remote networks. If it is configured incorrectly, the host will be isolated to its own local subnet.",
+                explanation_ar: "البوابة الافتراضية هي نقطة الخروج للمضيفين المحليين للاتصال بالشبكات البعيدة. في حال تكوينها بشكل خاطئ، سيقتصر تواصل الجهاز على الأجهزة الموجودة في شبكته المحلية فقط."
+            },
+            {
+                id: 6,
+                type: "single",
+                q: "Which statement describes a feature of the IP protocol?",
+                q_ar: "أي العبارات التالية تصف ميزة من ميزات بروتوكول الإنترنت (IP)؟",
+                options: [
+                    "IP encapsulation is modified based on network media.",
+                    "IP relies on Layer 2 protocols for transmission error control.",
+                    "MAC addresses are used during the IP packet encapsulation.",
+                    "IP relies on upper layer services to handle situations of missing or out-of-order packets."
+                ],
+                options_ar: [
+                    "يتم تعديل تغليف IP بناءً على نوع وسيط الشبكة الفيزيائي.",
+                    "يعتمد IP على بروتوكولات الطبقة الثانية للتحكم في أخطاء الإرسال.",
+                    "تُخدم عناوين MAC أثناء تغليف حزمة IP للطبقة الثالثة.",
+                    "يعتمد IP على خدمات الطبقات العليا لمعالجة حالات فقدان الحزم أو وصولها خارج الترتيب."
+                ],
+                correct: [3],
+                explanation: "IP is connectionless and unreliable (best-effort). It does not natively manage flow control or error recovery, instead relying on Transport layer protocols like TCP to handle missing or out-of-order packets.",
+                explanation_ar: "بروتوكول IP غير موثوق وغير موجه بالاتصال (Best-effort). لا يمتلك آليات مدمجة للتحكم بالتدفق أو استعادة الأخطاء، ويعتمد على بروتوكولات طبقة النقل (مثل TCP) لتصحيح هذه المشاكل."
+            },
+            {
+                id: 7,
+                type: "single",
+                q: "Why is NAT not needed in IPv6?",
+                q_ar: "لماذا لا توجد حاجة لتقنية NAT في الإصدار السادس لبروتوكول الإنترنت (IPv6)؟",
+                options: [
+                    "Because IPv6 has integrated security, there is no need to hide the IPv6 addresses of internal networks.",
+                    "Any host or user can get a public IPv6 network address because the number of available IPv6 addresses is extremely large.",
+                    "The problems that are induced by NAT applications are solved because the IPv6 header improves packet handling by intermediate routers.",
+                    "The end-to-end connectivity problems that are caused by NAT are solved because the number of routes increases with the number of nodes that are connected to the Internet."
+                ],
+                options_ar: [
+                    "نظراً لأن IPv6 يمتلك أماناً مدمجاً، فلا توجد حاجة لإخفاء عناوين IPv6 للشبكات الداخلية.",
+                    "يمكن لأي مضيف أو مستخدم الحصول على عنوان IPv6 عام لأن عدد العناوين المتاحة ضخم جداً ولانهائي تقريباً.",
+                    "تُحل المشاكل الناتجة عن تطبيقات NAT لأن ترويسة IPv6 تحسن معالجة الحزم بواسطة أجهزة التوجيه.",
+                    "تُحل مشاكل الاتصال من طرف إلى طرف الناتجة عن NAT لأن عدد المسارات يزداد مع عدد العقد المتصلة بالإنترنت."
+                ],
+                correct: [1],
+                explanation: "IPv6 provides an astronomical number of addresses (340 undecillion), allowing virtually every device on Earth to have a globally unique public IP, eliminating the address-saving need for NAT.",
+                explanation_ar: "يوفر IPv6 عدداً فلكياً من العناوين الفريدة، مما يسمح لكل جهاز على الكوكب بالحصول على عنوان عام (Public IP) فريد عالمياً، وبالتالي يلغي الحاجة لتقنية NAT المخصصة لتوفير العناوين."
+            },
+            {
+                id: 8,
+                type: "single",
+                q: "Which parameter does the router use to choose the path to the destination when there are multiple routes available?",
+                q_ar: "ما هو المعيار الذي يستخدمه الموجه (Router) لاختيار المسار للوجهة عندما تتوفر مسارات متعددة؟",
+                options: [
+                    "the lower metric value that is associated with the destination network",
+                    "the lower gateway IP address to get to the destination network",
+                    "the higher metric value that is associated with the destination network",
+                    "the higher gateway IP address to get to the destination network"
+                ],
+                options_ar: [
+                    "قيمة المقياس (Metric) الأقل المرتبطة بشبكة الوجهة",
+                    "عنوان IP للبوابة الأقل قيمة للوصول إلى شبكة الوجهة",
+                    "قيمة المقياس (Metric) الأعلى المرتبطة بشبكة الوجهة",
+                    "عنوان IP للبوابة الأعلى قيمة للوصول إلى شبكة الوجهة"
+                ],
+                correct: [0],
+                explanation: "When a router has multiple routes to the exact same destination, it selects the path with the lowest metric value (e.g., hop count in RIP, bandwidth in OSPF).",
+                explanation_ar: "عندما يمتلك الموجه مسارات متعددة تؤدي لنفس الوجهة بدقة، فإنه يختار المسار ذو قيمة المقياس (Metric) الأقل (مثل عدد القفزات في RIP أو النطاق الترددي في OSPF)."
+            },
+            {
+                id: 9,
+                type: "multi",
+                selectCount: 2,
+                q: "What are two services provided by the OSI network layer? (Choose two.)",
+                q_ar: "ما هي الخدمتان اللتان تقدمهما طبقة الشبكة (Network Layer) في نموذج OSI؟ (اختر اثنتين)",
+                options: [
+                    "performing error detection",
+                    "routing packets toward the destination",
+                    "encapsulating PDUs from the transport layer",
+                    "placement of frames on the media",
+                    "collision detection"
+                ],
+                options_ar: [
+                    "إجراء كشف وتصحيح الأخطاء (Error detection)",
+                    "توجيه الحزم (Routing packets) نحو الوجهة النهائية",
+                    "تغليف وحدات البيانات (Encapsulating PDUs) القادمة من طبقة النقل",
+                    "وضع الإطارات (Frames) على وسيط النقل المادي",
+                    "كشف التصادم في الإرسال (Collision detection)"
+                ],
+                correct: [1, 2],
+                explanation: "The network layer is responsible for logical addressing, encapsulation (wrapping transport layer segments into packets), routing, and de-encapsulation. Placement of frames, error detection, and collision detection belong to the Data Link/Physical layers.",
+                explanation_ar: "تتحمل طبقة الشبكة مسؤولية العنونة المنطقية، والتغليف (تغليف مقاطع طبقة النقل إلى حزم)، والتوجيه. بينما كشف الأخطاء والتصادم ووضع البيانات على الوسائط تتبع لطبقة ربط البيانات والطبقة الفيزيائية."
+            },
+            {
+                id: 10,
+                type: "single",
+                q: "Within a production network, what is the purpose of configuring a switch with a default gateway address?",
+                q_ar: "داخل الشبكات الفعلية، ما الغرض من تكوين عنوان بوابة افتراضية (Default Gateway) للمبدل (Switch)؟",
+                options: [
+                    "Hosts that are connected to the switch can use the switch default gateway address to forward packets to a remote destination.",
+                    "A switch must have a default gateway to be accessible by Telnet and SSH.",
+                    "The default gateway address is used to forward packets originating from the switch to remote networks.",
+                    "It provides a next-hop address for all traffic that flows through the switch."
+                ],
+                options_ar: [
+                    "يمكن للأجهزة المتصلة بالمبدل استخدام عنوان بوابة المبدل لتوجيه حزمها لوجهتها البعيدة.",
+                    "يجب أن يمتلك المبدل بوابة افتراضية للوصول إليه عن بعد بواسطة بروتوكولات Telnet و SSH.",
+                    "يُستخدم عنوان البوابة لتمرير وتوجيه الحزم التي تنشأ من المبدل نفسه إلى شبكات بعيدة.",
+                    "يوفر عنوان قفزة تالية لجميع حركات مرور البيانات التي تمر وتعبر من خلال المبدل."
+                ],
+                correct: [2],
+                explanation: "To manage a Layer 2 switch remotely from another network (e.g., using SSH/ping), the switch must be able to send packets back to remote locations. This requires configuring a default gateway on the switch.",
+                explanation_ar: "لإدارة مبدل الطبقة الثانية عن بعد من شبكة أخرى (عبر SSH أو ping)، يجب أن يتمكن المبدل من إرسال الحزم للشبكات البعيدة، وهذا يتطلب تزويده ببوابة افتراضية خاصة به."
+            },
+            {
+                id: 11,
+                type: "single",
+                q: "What is a basic characteristic of the IP protocol?",
+                q_ar: "ما هي السمة الأساسية لبروتوكول الإنترنت (IP)؟",
+                options: ["connectionless", "media dependent", "user data segmentation", "reliable end-to-end delivery"],
+                options_ar: ["غير موجه بالاتصال (Connectionless)", "يعتمد على وسيط النقل (Media dependent)", "تجزئة بيانات المستخدم (Segmentation)", "تسليم موثوق للبيانات من طرف لآخر"],
+                correct: [0],
+                explanation: "The IP protocol is connectionless, meaning it does not establish a dedicated session with the receiver before transmitting packets.",
+                explanation_ar: "بروتوكول IP يتميز بأنه غير موجه بالاتصال (Connectionless)، أي أنه لا ينشئ اتصالاً مسبقاً مع الطرف المستقبل قبل الشروع في إرسال الحزم."
+            },
+            {
+                id: 12,
+                type: "single",
+                q: "Which field in the IPv4 header is used to prevent a packet from traversing a network endlessly?",
+                q_ar: "أي حقل في ترويسة IPv4 يُستخدم لمنع الحزمة من الدوران والدوران في الشبكة بشكل غير نهائي؟",
+                options: ["Time-to-Live", "Sequence Number", "Acknowledgment Number", "Differentiated Services"],
+                options_ar: ["وقت الصلاحية (Time-to-Live - TTL)", "رقم التسلسل (Sequence Number)", "رقم التأكيد (Acknowledgment Number)", "الخدمات المتميزة (Differentiated Services)"],
+                correct: [0],
+                explanation: "The Time-to-Live (TTL) field contains an 8-bit value decremented by 1 at every router. If it hits 0, the packet is discarded, preventing routing loops from endlessly hogging bandwidth.",
+                explanation_ar: "يحتوي حقل TTL على قيمة تنخفض بمقدار 1 عند كل موجه يمر به. إذا وصلت القيمة للصفر، يتم إسقاط الحزمة، مما يمنع الدوران اللانهائي للحزم بسبب حلقات التوجيه."
+            },
+            {
+                id: 13,
+                type: "single",
+                q: "What is one advantage that the IPv6 simplified header offers over IPv4?",
+                q_ar: "ما هي إحدى الميزات التي تقدمها ترويسة IPv6 المبسطة مقارنة بترويسة IPv4؟",
+                options: ["smaller-sized header", "little requirement for processing checksums", "smaller-sized source and destination IP addresses", "efficient packet handling"],
+                options_ar: ["حجم ترويسة أصغر فزيائياً", "متطلبات منخفضة للغاية لمعالجة حقل التحقق من الأخطاء (Checksum)", "عناوين مصدر ووجهة أصغر حجماً", "معالجة أكثر كفاءة للحزم من قبل الموجهات (Efficient packet handling)"],
+                correct: [3],
+                explanation: "The IPv6 header is simplified with fewer fields, which allows intermediate routers to process and forward packets much faster and more efficiently.",
+                explanation_ar: "تم تصميم ترويسة IPv6 بتبسيط كبير وبحقول ثابتة أقل، مما يتيح لأجهزة التوجيه الوسيطة معالجة وتمرير الحزم بشكل أسرع وأكثر كفاءة لتوسيع الأداء."
+            },
+            {
+                id: 14,
+                type: "single",
+                q: "What IPv4 header field identifies the upper layer protocol carried in the packet?",
+                q_ar: "ما هو الحقل في ترويسة IPv4 الذي يحدد بروتوكول الطبقة العليا المحمول داخل الحزمة؟",
+                options: ["Protocol", "Identification", "Version", "Differentiated Services"],
+                options_ar: ["البروتوكول (Protocol)", "المعرف (Identification)", "الإصدار (Version)", "الخدمات المتميزة (Differentiated Services)"],
+                correct: [0],
+                explanation: "The Protocol field in the IPv4 header (or Next Header in IPv6) indicates which upper-layer protocol (like TCP, UDP, or ICMP) should receive the de-encapsulated payload.",
+                explanation_ar: "يحدد حقل البروتوكول (Protocol) في ترويسة IPv4 (أو Next Header في IPv6) بروتوكول طبقة النقل المستهدف (مثل TCP أو UDP أو ICMP) لتسليمه الحمولة بعد فك التغليف."
+            },
+            {
+                id: 15,
+                type: "matching",
+                q: "Refer to the exhibit routing table. Match the packets with their destination IP address to the exiting interfaces on the router.",
+                q_ar: "بالرجوع لجدول التوجيه المعروض، قم بمطابقة عناوين IP الوجهة للحزم مع واجهة الخروج المقابلة لها في الموجه.",
+                hasExhibit: "routing-table",
+                leftItems: [
+                    { text: "Packets with destination of 172.17.6.15", letter: "A" },
+                    { text: "Packets with destination of 172.17.14.8", letter: "B" },
+                    { text: "Packets with destination of 172.17.8.20", letter: "C" },
+                    { text: "Packets with destination of 172.17.10.5", letter: "D" },
+                    { text: "Packets with destination of 172.17.12.10", letter: "E" }
+                ],
+                leftItems_ar: [
+                    { text: "الحزم المتجهة إلى 172.17.6.15", letter: "A" },
+                    { text: "الحزم المتجهة إلى 172.17.14.8", letter: "B" },
+                    { text: "الحزم المتجهة إلى 172.17.8.20", letter: "C" },
+                    { text: "الحزم المتجهة إلى 172.17.10.5", letter: "D" },
+                    { text: "الحزم المتجهة إلى 172.17.12.10", letter: "E" }
+                ],
+                rightItems: [
+                    { text: "FastEthernet0/1", letter: "B" },
+                    { text: "FastEthernet1/0", letter: "E" },
+                    { text: "FastEthernet0/0", letter: "A" },
+                    { text: "FastEthernet1/1", letter: "D" },
+                    { text: "Serial0/0/0", letter: "C" }
+                ],
+                correctMatches: {
+                    0: 2, // 172.17.6.15 -> FastEthernet0/0 (A -> A)
+                    1: 0, // 172.17.14.8 -> FastEthernet0/1 (B -> B)
+                    2: 4, // 172.17.8.20 -> Serial0/0/0 (C -> C)
+                    3: 3, // 172.17.10.5 -> FastEthernet1/1 (D -> D)
+                    4: 1  // 172.17.12.10 -> FastEthernet1/0 (E -> E)
+                },
+                explanation: "Based on the routing table: 172.17.6.15 matches OSPF route 172.17.6.0/24 via FastEthernet0/0. 172.17.14.8 matches connected subnet 172.17.14.0/24 via FastEthernet0/1. 172.17.8.20 doesn't match any specific route, so it utilizes the Gateway of last resort (0.0.0.0/0) exiting via Serial0/0/0. 172.17.10.5 matches 172.17.10.0/24 via FastEthernet1/1. 172.17.12.10 matches 172.17.12.0/24 via FastEthernet1/0.",
+                explanation_ar: "بناءً على جدول التوجيه: الحزمة المتجهة للعنوان 172.17.6.15 تسلك مسار OSPF الموجه عبر FastEthernet0/0. الحزمة المتجهة لـ 172.17.14.8 تسلك المسار المتصل مباشرة بالواجهة FastEthernet0/1. العنوان 172.17.8.20 لا يوجد له مسار مطابق مخصص، لذا يسلك البوابة الأخيرة (0.0.0.0/0) للخروج عبر Serial0/0/0. الحزمة المتجهة لـ 172.17.10.5 تخرج عبر FastEthernet1/1. والحزمة المتجهة لـ 172.17.12.10 تخرج عبر FastEthernet1/0."
+            },
+            {
+                id: 16,
+                type: "single",
+                q: "What information does the loopback test provide?",
+                q_ar: "ما هي المعلومات التي يوفرها اختبار الحلقة المغلقة (Loopback Test) للمطور أو المهندس؟",
+                options: [
+                    "The TCP/IP stack on the device is working correctly.",
+                    "The device has end-to-end connectivity.",
+                    "DHCP is working correctly.",
+                    "The Ethernet cable is working correctly.",
+                    "The device has the correct IP address on the network."
+                ],
+                options_ar: [
+                    "أن حزمة بروتوكولات TCP/IP مفعّلة وتعمل بشكل صحيح داخل كرت المضيف.",
+                    "أن الجهاز يمتلك اتصالاً متكاملاً من البداية للنهاية مع باقي الأجهزة.",
+                    "أن بروتوكول تخصيص العناوين التلقائي DHCP يعمل بشكل صحيح.",
+                    "أن كابل الإيثرنت (المادي) متصل ويعمل بشكل سليم.",
+                    "أن الجهاز يمتلك عنوان IP صحيحاً في الشبكة."
+                ],
+                correct: [0],
+                explanation: "Pinging the loopback address (127.0.0.1) tests the internal TCP/IP stack on the network interface card, showing if software-level IP configuration is active, even without a connected cable.",
+                explanation_ar: "إرسال ping لعنوان loopback يختبر البنية البرمجية لبروتوكول TCP/IP داخلياً على كرت الشبكة، مما يدل على سلامة إعداداتها حتى لو لم يكن كابل الشبكة متصلاً."
+            },
+            {
+                id: 17,
+                type: "single",
+                q: "What routing table entry has a next hop address associated with a destination network?",
+                q_ar: "أي من إدخالات جدول التوجيه تمتلك عنوان قفزة تالية (Next Hop) مرتبط بشبكة الوجهة؟",
+                options: ["directly-connected routes", "local routes", "remote routes", "C and L source routes"],
+                options_ar: ["المسارات المتصلة مباشرة (directly-connected)", "المسارات المحلية (local)", "المسارات البعيدة (remote)", "مسارات المصدر C و L"],
+                correct: [2],
+                explanation: "Remote routes identify destination networks that are not directly attached. To reach these networks, the routing table specifies a next-hop IP address of the adjacent router.",
+                explanation_ar: "المسارات البعيدة (Remote Routes) هي مسارات لشبكات غير متصلة مباشرة بالموجه. للوصول إليها، يسجل جدول التوجيه عنوان IP للقفزة التالية (Next Hop) للموجه المجاور."
+            },
+            {
+                id: 18,
+                type: "single",
+                q: "How do hosts ensure that their packets are directed to the correct network destination?",
+                q_ar: "كيف تضمن المضيفات (Hosts) أن حزمها يتم توجيهها للشبكة الوجهة الصحيحة؟",
+                options: [
+                    "They have to keep their own local routing table that contains a route to the loopback interface, a local network route, and a remote default route.",
+                    "They always direct their packets to the default gateway, which will be responsible for the packet delivery.",
+                    "They search in their own local routing table for a route to the network destination address and pass this information to the default gateway.",
+                    "They send a query packet to the default gateway asking for the best route."
+                ],
+                options_ar: [
+                    "يجب أن تحتفظ بجدول توجيه محلي خاص بها يحتوي على مسار لواجهة loopback، مسار للشبكة المحلية، ومسار افتراضي للشبكات البعيدة.",
+                    "تقوم دائماً بإرسال حزمها للبوابة الافتراضية، وتترك لها مسؤولية إيصال الحزم.",
+                    "تبحث في جدول التوجيه المحلي الخاص بها عن مسار للوجهة ومن ثم تمرر هذه المعلومات للبوابة الافتراضية.",
+                    "ترسل حزمة استعلام للبوابة الافتراضية تسألها عن أفضل مسار."
+                ],
+                correct: [0],
+                explanation: "Every host computer maintains its own local routing table (viewable with 'netstat -r' or 'route print') to determine whether a destination IP is local or remote, and if remote, to direct it to the default gateway.",
+                explanation_ar: "كل مضيف شبكة يحتفظ بجدول توجيه داخلي خاص به (يمكن عرضه عبر الأمر route print) لتحديد ما إذا كان عنوان الهدف محلياً فيرسله مباشرة، أو بعيداً فيوجهه للبوابة الافتراضية."
+            },
+            {
+                id: 19,
+                type: "single",
+                q: "When transporting data from real-time applications, such as streaming audio and video, which field in the IPv6 header can be used to inform the routers and switches to maintain the same path for the packets in the same conversation?",
+                q_ar: "عند نقل بيانات لتطبيقات الوقت الفعلي (مثل الصوت والفيديو البث الحي)، أي حقل في ترويسة IPv6 يمكن استخدامه لإعلام أجهزة الشبكة بالحفاظ على نفس المسار لجميع الحزم في نفس المحادثة؟",
+                options: ["Next Header", "Flow Label", "Traffic Class", "Differentiated Services"],
+                options_ar: ["الترويسة التالية (Next Header)", "ملصق التدفق (Flow Label)", "فئة حركة المرور (Traffic Class)", "الخدمات المتميزة (Differentiated Services)"],
+                correct: [1],
+                explanation: "The 20-bit Flow Label field in the IPv6 header helps identify packets belonging to a specific communication flow, enabling routers to maintain the same path to prevent reordering issues in real-time streams.",
+                explanation_ar: "حقل ملصق التدفق (Flow Label) بحجم 20 بت في ترويسة IPv6 يساعد في تمييز الحزم التي تنتمي لتدفق بيانات معين، مما يتيح للموجهات إبقائها على مسار واحد لتفادي تأخر أو تغير ترتيب الحزم الحية."
+            },
+            {
+                id: 20,
+                type: "single",
+                q: "What statement describes the purpose of the Address Resolution Protocol?",
+                q_ar: "ما هي العبارة التي تصف غرض وظيفة بروتوكول دقة العناوين (ARP)؟",
+                options: [
+                    "ARP is used to discover the IP address of any host on a different network.",
+                    "ARP is used to discover the IP address of any host on the local network.",
+                    "ARP is used to discover the MAC address of any host on a different network.",
+                    "ARP is used to discover the MAC address of any host on the local network."
+                ],
+                options_ar: [
+                    "يُستخدم ARP لاكتشاف عنوان IP الخاص بأي مضيف في شبكة مختلفة.",
+                    "يُسخدم ARP لاكتشاف عنوان IP الخاص بأي مضيف في الشبكة المحلية.",
+                    "يُستخدم ARP لاكتشاف عنوان MAC الخاص بأي مضيف في شبكة مختلفة.",
+                    "يُستخدم ARP لاكتشاف عنوان MAC الفيزيائي الخاص بأي مضيف في الشبكة المحلية."
+                ],
+                correct: [3],
+                explanation: "ARP's main job is resolving a known Layer 3 IPv4 address into a Layer 2 physical MAC address for local Ethernet delivery.",
+                explanation_ar: "المهمة الأساسية لـ ARP هي ترجمة وتحويل عنوان IP للطبقة الثالثة معروف، إلى عنوان MAC فيزيائي للطبقة الثانية لتسهيل نقل البيانات محلياً عبر الإيثرنت."
+            }
+        ];
+    </script>
+
+    <script type="text/babel">
+        const additionalQuestions = [
+            {
+                id: 21,
+                type: "multi",
+                selectCount: 2,
+                q: "Under which two circumstances will a switch flood a frame out of every port except the port that the frame was received on? (Choose two.)",
+                q_ar: "تحت أي حالتين سيقوم المبدل (Switch) ببث وغمر الإطار عبر جميع المنافذ ما عدا المنفذ الذي استقبل الإطار منه؟ (اختر اثنتين)",
+                options: [
+                    "The frame has the broadcast address as the destination address.",
+                    "The destination address is unknown to the switch.",
+                    "The source address in the frame header is the broadcast address.",
+                    "The source address in the frame is a multicast address.",
+                    "The destination address in the frame is a known unicast address."
+                ],
+                options_ar: [
+                    "عندما يحمل الإطار عنوان بث عام (Broadcast Address) كعنوان وجهة له.",
+                    "عندما يكون عنوان الوجهة مجهولاً تماماً وغير مسجل بجدول عناوين المبدل (MAC table).",
+                    "عندما يكون عنوان المصدر في الإطار هو عنوان البث.",
+                    "عندما يكون عنوان المصدر في الإطار عبارة عن عنوان بث متعدد.",
+                    "عندما يكون عنوان الهدف في الإطار عنواناً فردياً (Unicast) معروفاً للمبدل."
+                ],
+                correct: [0, 1],
+                explanation: "Switches flood frames to all ports (except incoming port) when: 1. The frame is targeted to a broadcast MAC (FF-FF-FF-FF-FF-FF). 2. The destination unicast MAC is not yet recorded in the MAC address table.",
+                explanation_ar: "يغمر المبدل المنافذ بالإطار في حالتين: 1. استهداف الإطار لعنوان بث كلي (FF-FF-FF-FF-FF-FF). 2. أن يكون عنوان MAC الوجهة الفردي غير معروف أو مسجل في جدول الـ MAC الخاص بالمبدل."
+            },
+            {
+                id: 22,
+                type: "single",
+                q: "Which statement describes the treatment of ARP requests on the local link?",
+                q_ar: "أي مما يلي يصف بدقة كيفية معالجة طلبات ARP (ARP Requests) على الرابط المحلي؟",
+                options: [
+                    "They must be forwarded by all routers on the local network.",
+                    "They are received and processed by every device on the local network.",
+                    "They are dropped by all switches on the local network.",
+                    "They are received and processed only by the target device."
+                ],
+                options_ar: [
+                    "يجب إعادة توجيهها وتمريرها بواسطة جميع الموجهات المتصلة بالشبكة المحلية.",
+                    "يتم استقبالها ومعالجتها بواسطة كافة الأجهزة النشطة في الشبكة المحلية.",
+                    "يتم إسقاطها وتجاهلها بواسطة المبدلات المتواجدة في الشبكة المحلية.",
+                    "يتم استقبالها ومعالجتها فقط وحصرياً بواسطة المضيف المستهدف."
+                ],
+                correct: [1],
+                explanation: "ARP requests are Layer 2 broadcast frames (FF-FF-FF-FF-FF-FF). This forces every network interface card on the segment to process the frame up to the operating system level.",
+                explanation_ar: "تُرسل طلبات ARP كإطارات بث كلي للطبقة الثانية (FF-FF-FF-FF-FF-FF)، مما يجبر كل كرت شبكة متصل بالشبكة المحلية على استقبال الإطار ورفعه للمعالجة."
+            },
+            {
+                id: 23,
+                type: "single",
+                q: "Which destination address is used in an ARP request frame?",
+                q_ar: "ما هو عنوان الوجهة المستخدم في إطار طلب ARP (ARP Request)؟",
+                options: ["0.0.0.0", "255.255.255.255", "FFFF.FFFF.FFFF", "AAAA.AAAA.AAAA", "the physical address of the destination host"],
+                options_ar: ["0.0.0.0", "255.255.255.255", "FFFF.FFFF.FFFF (أو FF-FF-FF-FF-FF-FF)", "AAAA.AAAA.AAAA", "العنوان الفيزيائي للمضيف الوجهة مباشرة"],
+                correct: [2],
+                explanation: "An ARP request is broadcast to all devices on the local segment, utilizing the Layer 2 broadcast MAC address FFFF.FFFF.FFFF.",
+                explanation_ar: "يستخدم طلب ARP عنوان البث العام للطبقة الثانية MAC Address وهو FFFF.FFFF.FFFF (أي FF-FF-FF-FF-FF-FF) ليصل لكافة أجهزة النطاق المحلي."
+            },
+            {
+                id: 24,
+                type: "single",
+                q: "A network technician issues the arp -d * command on a PC after the router that is connected to the LAN is reconfigured. What is the result after this command is issued?",
+                q_ar: "قام فني شبكات بتنفيذ الأمر arp -d * على جهاز كمبيوتر بعد إعادة تهيئة الموجه المتصل بالشبكة المحلية. ما النتيجة بعد تنفيذ هذا الأمر؟",
+                options: [
+                    "The ARP cache is cleared.",
+                    "The current content of the ARP cache is displayed.",
+                    "The detailed information of the ARP cache is displayed.",
+                    "The ARP cache is synchronized with the router interface."
+                ],
+                options_ar: [
+                    "يتم مسح وإفراغ ذاكرة التخزين المؤقت لـ ARP (ARP cache) بالكامل.",
+                    "يتم عرض المحتويات الحالية لذاكرة التخزين المؤقت لـ ARP.",
+                    "يتم عرض تفاصيل دقيقة ومعلومات موسعة حول ذاكرة ARP.",
+                    "يتم مزامنة وتطابق جدول ARP الخاص بالمضيف مع واجهة الموجه."
+                ],
+                correct: [0],
+                explanation: "The 'arp -d *' command on Windows (or 'arp -d -a') clears the computer's ARP table, forcing it to dynamically resolve and update outdated IP-to-MAC mappings.",
+                explanation_ar: "الأمر 'arp -d *' يقوم بمسح وإفراغ كافة الإدخالات الديناميكية من جدول ARP للمضيف، مما يجبر الجهاز على إرسال طلبات جديدة وتحديث البيانات القديمة."
+            },
+            {
+                id: 25,
+                type: "single",
+                q: "Refer to the switch MAC address table topology. PC1 (port 4) sends a frame addressed to PC3 (MAC: 12-34-56-78-9A-BE). Based on the MAC address table shown in the diagram, what will the switch do with the frame?",
+                q_ar: "بالرجوع لطوبولوجيا جدول عناوين المبدل، يرسل PC1 (منفذ 4) إطاراً موجهاً لـ PC3. بالنظر إلى جدول MAC المعروض، ماذا سيفعل المبدل؟",
+                hasExhibit: "mac-table-topology",
+                options: [
+                    "The switch will discard the frame.",
+                    "The switch will forward the frame only to port 2.",
+                    "The switch will forward the frame to all ports except port 4.",
+                    "The switch will forward the frame to all ports.",
+                    "The switch will forward the frame only to ports 1 and 3."
+                ],
+                options_ar: [
+                    "سيقوم المبدل بإسقاط وتجاهل الإطار.",
+                    "سيقوم المبدل بتوجيه الإطار للمنفذ 2 فقط.",
+                    "سيقوم المبدل بتوجيه وغمر الإطار لجميع المنافذ ما عدا منفذ الاستقبال 4.",
+                    "سيقوم المبدل بتوجيه الإطار لجميع المنافذ دون استثناء.",
+                    "سيقوم المبدل بتوجيه الإطار للمنفذين 1 و 3 فقط."
+                ],
+                correct: [2],
+                explanation: "Since PC3's MAC address (12-34-56-78-9A-BE) is NOT present in the switch's MAC Address Table, the switch treats it as an unknown unicast and floods the frame out of all ports except the port where it arrived (port 4).",
+                explanation_ar: "بما أن عنوان MAC الخاص بـ PC3 غير مسجل حالياً في جدول المبدل، يعامل المبدل الإطار كـ (Unknown Unicast) ويقوم ببثه وغمره عبر كافة المنافذ الفعالة ما عدا منفذ الدخول 4."
+            },
+            {
+                id: 26,
+                type: "multi",
+                selectCount: 2,
+                q: "Which two types of IPv6 messages are used in place of ARP for address resolution? (Choose two.)",
+                q_ar: "ما هما نوعا رسائل IPv6 اللذان يُستخدمان كبديل لبروتوكول ARP لإتمام عملية دقة العناوين؟ (اختر اثنتين)",
+                options: ["anycast", "broadcast", "echo reply", "echo request", "neighbor solicitation", "neighbor advertisement"],
+                options_ar: ["رسالة البث لأقرب عقدة (Anycast)", "رسائل البث العام المفتوح (Broadcast)", "رد الصدى (Echo Reply)", "طلب الصدى (Echo Request)", "طلب الجار (Neighbor Solicitation)", "إعلان الجار (Neighbor Advertisement)"],
+                correct: [4, 5],
+                explanation: "IPv6 does not use broadcast-based ARP. Instead, IPv6 Neighbor Discovery Protocol (NDP) uses ICMPv6 Neighbor Solicitation (NS) and Neighbor Advertisement (NA) multicast messages.",
+                explanation_ar: "لا يدعم IPv6 البث العام و ARP. بدلاً من ذلك، يستخدم بروتوكول اكتشاف الجيران (NDP) رسائل ICMPv6 للبث المتعدد: طلب الجار (NS) وإعلان الجار (NA)."
+            },
+            {
+                id: 27,
+                type: "single",
+                q: "What is the aim of an ARP spoofing attack?",
+                q_ar: "ما هو الهدف الأساسي من هجوم انتحال الهوية لبروتوكول ARP (ARP Spoofing)؟",
+                options: [
+                    "to flood the network with ARP reply broadcasts",
+                    "to fill switch MAC address tables with bogus addresses",
+                    "to associate IP addresses to the wrong MAC address",
+                    "to overwhelm network hosts with ARP requests"
+                ],
+                options_ar: [
+                    "إغراق الشبكة بالبث العشوائي لردود ARP.",
+                    "تعبئة وملء جدول الـ MAC للمبدل بعناوين وهمية غير حقيقية.",
+                    "ربط ومطابقة عناوين IP بعناوين MAC خاطئة (تابعة للمهاجم).",
+                    "إرهاق مضيفي الشبكة بإرسال هائل لطلبات ARP."
+                ],
+                correct: [2],
+                explanation: "ARP spoofing (poisoning) aims to associate an IP address (like the default gateway) with the attacker's MAC address, allowing the attacker to intercept or modify local traffic.",
+                explanation_ar: "الهدف هو جعل الأجهزة في الشبكة تربط عنوان IP معين (مثل البوابة الافتراضية) بعنوان MAC الخاص بالمهاجم، مما يتيح له اعتراض حركة البيانات."
+            },
+            {
+                id: 28,
+                type: "single",
+                q: "Refer to the network diagram. PC1 attempts to connect to File_server1 and sends an ARP request to obtain a destination MAC address. Which MAC address will PC1 receive in the ARP reply?",
+                q_ar: "بالرجوع لمخطط الشبكة، يحاول PC1 الاتصال بـ File_server1 ويرسل طلب ARP للحصول على MAC الوجهة. أي عنوان MAC سيستقبله PC1 في الرد؟",
+                hasExhibit: "arp-reply-topology",
+                options: [
+                    "the MAC address of S1",
+                    "the MAC address of the G0/0 interface on R1",
+                    "the MAC address of the G0/0 interface on R2",
+                    "the MAC address of S2",
+                    "the MAC address of File_server1"
+                ],
+                options_ar: [
+                    "عنوان MAC الخاص بالمبدل S1",
+                    "عنوان MAC الخاص بالواجهة G0/0 للموجه R1 (البوابة الافتراضية)",
+                    "عنوان MAC الخاص بالواجهة G0/0 للموجه R2",
+                    "عنوان MAC الخاص بالمبدل S2",
+                    "عنوان MAC الخاص بخادم الملفات File_server1 مباشرة"
+                ],
+                correct: [1],
+                explanation: "Since File_server1 is on a remote subnet, PC1 determines it must go through its default gateway. Thus, it sends an ARP request for R1's local interface G0/0, receiving R1 G0/0's MAC address.",
+                explanation_ar: "بما أن خادم الملفات يقع في شبكة بعيدة، يعلم PC1 أنه بحاجة لتمرير الإطار لبوابته الافتراضية. لذلك، يرسل طلب ARP للحصول على MAC منفذ R1 G0/0."
+            },
+            {
+                id: 29,
+                type: "single",
+                q: "Where are IPv4 address to Layer 2 Ethernet address mappings maintained on a host computer?",
+                q_ar: "أين يتم الاحتفاظ بجدول مطابقة عناوين IPv4 وعناوين MAC للطبقة الثانية داخل جهاز كمبيوتر المضيف؟",
+                options: ["neighbor table", "ARP cache", "routing table", "MAC address table"],
+                options_ar: ["جدول الجيران (Neighbor table)", "مخزن ARP المؤقت (ARP Cache)", "جدول التوجيه (Routing table)", "جدول عناوين الـ MAC"],
+                correct: [1],
+                explanation: "The ARP Cache (or ARP table) on a host computer stores dynamic or static mappings of IPv4 addresses to physical MAC addresses.",
+                explanation_ar: "تحتفظ الأجهزة بذاكرة تخزين مؤقت تسمى ARP Cache (أو جدول ARP) لتخزين المطابقات النشطة بين عناوين IP وعناوين MAC الفيزيائية."
+            },
+            {
+                id: 30,
+                type: "single",
+                q: "What important information is examined in the Ethernet frame header by a Layer 2 device in order to forward the data onward?",
+                q_ar: "ما هي المعلومات الهامة التي يتم فحصها في ترويسة إطار الإيثرنت بواسطة أجهزة الطبقة الثانية (مثل المبدلات) لتوجيه البيانات؟",
+                options: ["source MAC address", "source IP address", "destination MAC address", "Ethernet type", "destination IP address"],
+                options_ar: ["عنوان MAC المصدر", "عنوان IP المصدر", "عنوان MAC الوجهة", "نوع الإيثرنت (EtherType)", "عنوان IP الوجهة"],
+                correct: [2],
+                explanation: "Layer 2 switches make forwarding decisions based strictly on the destination MAC address found inside the Layer 2 Ethernet frame header.",
+                explanation_ar: "تتخذ المبدلات وأجهزة الطبقة الثانية قرارات توجيه الإطارات بناءً على فحص عنوان MAC الوجهة (Destination MAC) الموجود في ترويسة إطار الإيثرنت."
+            }
+        ];
+        quizData.push(...additionalQuestions);
+    </script>
+
+    <script type="text/babel">
+        const iosQuestions = [
+            {
+                id: 31,
+                type: "matching",
+                q: "Match the Cisco IOS commands to their corresponding action/description:",
+                q_ar: "قم بمطابقة أوامر نظام سيسكو (Cisco IOS) مع الوصف والإجراء المطابق لها:",
+                leftItems: [
+                    { text: "provides security on the console", letter: "A" },
+                    { text: "configures a name on the router", letter: "B" },
+                    { text: "displays a message after accessing the router", letter: "C" }
+                ],
+                leftItems_ar: [
+                    { text: "توفير الحماية الأمنية لمنفذ الكونسول", letter: "A" },
+                    { text: "برمجة وتعيين اسم مخصص للموجه", letter: "B" },
+                    { text: "عرض رسالة ترحيبية أو تحذيرية للمستخدمين", letter: "C" }
+                ],
+                rightItems: [
+                    { text: "Router(config-line)# password class", letter: "A" },
+                    { text: "Router(config)# banner motd #", letter: "C" },
+                    { text: "Router(config)# hostname CL1", letter: "B" }
+                ],
+                correctMatches: {
+                    0: 0,
+                    1: 2,
+                    2: 1
+                },
+                explanation: "'password class' applied under line console protects the console. 'hostname CL1' renames the device. 'banner motd' sets up the Message of the Day.",
+                explanation_ar: "الأمر password class تحت وضع الخط يحمي الكونسول. الأمر hostname CL1 يغير اسم الجهاز. الأمر banner motd يعين رسالة ترحيب اليوم للاتصال."
+            },
+            {
+                id: 32,
+                type: "single",
+                q: "A new network administrator has been asked to enter a banner message on a Cisco device. What is the fastest way a network administrator could test whether the banner is properly configured?",
+                q_ar: "طُلب من مسؤول شبكات جديد إدخال رسالة ترحيبية (Banner) على جهاز سيسكو. ما هي أسرع طريقة للتحقق واختبار ما إذا كانت الرسالة تعمل بشكل سليم؟",
+                options: [
+                    "Reboot the device.",
+                    "Enter CTRL-Z at the privileged mode prompt.",
+                    "Exit global configuration mode.",
+                    "Power cycle the device.",
+                    "Exit privileged EXEC mode and press Enter."
+                ],
+                options_ar: [
+                    "إعادة تشغيل الجهاز برمجياً بالكامل.",
+                    "إدخال الاختصار CTRL-Z في وضع الامتيازات.",
+                    "الخروج من وضع التكوين العام (Global Config).",
+                    "فصل مصدر الكهرباء وتشغيل الجهاز يدوياً.",
+                    "الخروج من وضع الامتيازات (Exit privileged EXEC) والضغط على زر Enter."
+                ],
+                correct: [4],
+                explanation: "By typing 'exit' at the privileged EXEC prompt (Router#), the session terminates. Pressing Enter prompt again will trigger the login/banner sequence immediately.",
+                explanation_ar: "عند كتابة exit في وضع الامتيازات (Router#), يتم إنهاء الجلسة والوصول المباشر للواجهة. الضغط على Enter فوراً يظهر الرسالة الترحيبية للتحقق منها."
+            },
+            {
+                id: 33,
+                type: "matching",
+                q: "Match the description of the device management access to the correct access method:",
+                q_ar: "قم بمطابقة وصف طريقة إدارة الأجهزة مع وسيلة الوصول والاتصال الصحيحة والمطابقة لها:",
+                leftItems: [
+                    { text: "unsecure remote access", letter: "A" },
+                    { text: "remote access method that uses encryption", letter: "B" },
+                    { text: "remote access via a dialup connection", letter: "C" },
+                    { text: "preferred out-of-band access method", letter: "D" }
+                ],
+                leftItems_ar: [
+                    { text: "اتصال بعيد غير آمن ينقل كلمات المرور كنصوص واضحة", letter: "A" },
+                    { text: "وسيلة اتصال وإدارة عن بعد آمنة ومشفرة تماماً", letter: "B" },
+                    { text: "الاتصال والإدارة البعيدة باستخدام خطوط الهاتف والطلب الهاتفي", letter: "C" },
+                    { text: "المنفذ المفضل للوصول المباشر خارج النطاق (Out-of-band)", letter: "D" }
+                ],
+                rightItems: [
+                    { text: "console", letter: "D" },
+                    { text: "Telnet", letter: "A" },
+                    { text: "AUX", letter: "C" },
+                    { text: "SSH", letter: "B" }
+                ],
+                correctMatches: {
+                    0: 1,
+                    1: 3,
+                    2: 2,
+                    3: 0
+                },
+                explanation: "SSH is secure encrypted remote access. Console is for local out-of-band configuration. AUX is for legacy dialup modems. Telnet is insecure remote access.",
+                explanation_ar: "SSH للوصول البعيد الآمن. الكونسول للربط المحلي الفوري ومباشر خارج نطاق الشبكة. AUX للاتصال الهاتفي والطلب القديم. Telnet للوصول البعيد المفتوح غير الآمن."
+            },
+            {
+                id: 34,
+                type: "matching",
+                q: "Match the phases to the functions during the boot up process of a Cisco router:",
+                q_ar: "قم بمطابقة مراحل الإقلاع (Bootup) في موجهات سيسكو مع الوظيفة والإجراء الفني الخاص بكل مرحلة:",
+                leftItems: [
+                    { text: "phase 1", letter: "A" },
+                    { text: "phase 3", letter: "B" },
+                    { text: "phase 2", letter: "C" }
+                ],
+                leftItems_ar: [
+                    { text: "المرحلة الأولى (Phase 1)", letter: "A" },
+                    { text: "المرحلة الثالثة (Phase 3)", letter: "B" },
+                    { text: "المرحلة الثانية (Phase 2)", letter: "C" }
+                ],
+                rightItems: [
+                    { text: "perform the POST and load the bootstrap program", letter: "A" },
+                    { text: "locate and load the startup configuration file", letter: "B" },
+                    { text: "locate and load the Cisco IOS software", letter: "C" }
+                ],
+                correctMatches: {
+                    0: 0,
+                    1: 1,
+                    2: 2
+                },
+                explanation: "Phase 1: hardware POST & bootstrap loader. Phase 2: locate/load IOS from flash. Phase 3: locate/load startup-config from NVRAM.",
+                explanation_ar: "المرحلة الأولى: الفحص الذاتي للهاردوير POST وتحميل برنامج التمهيد. المرحلة الثانية: العثور على نظام التشغيل IOS في فلاش وتحميله. المرحلة الثالثة: العثور على الإعدادات startup-config وتحميلها من NVRAM."
+            },
+            {
+                id: 35,
+                type: "matching",
+                q: "Match the configuration commands to the correct Cisco device mode prompt where they are executed:",
+                q_ar: "قم بمطابقة الأوامر البرمجية التالية مع وضع الجهاز المناسب والخاص بتشغيلها:",
+                leftItems: [
+                    { text: "ip address 192.168.4.4 255.255.255.0", letter: "A" },
+                    { text: "login", letter: "B" },
+                    { text: "service password-encryption", letter: "C" },
+                    { text: "enable", letter: "D" },
+                    { text: "copy running-config startup-config", letter: "E" }
+                ],
+                leftItems_ar: [
+                    { text: "تعيين عنوان IP وقناع على المنفذ", letter: "A" },
+                    { text: "تفعيل التحقق من كلمة المرور عند محاولة تسجيل الدخول", letter: "B" },
+                    { text: "تشفير جميع كلمات المرور النصية الواضحة", letter: "C" },
+                    { text: "الانتقال لوضع الامتيازات ذو الصلاحيات الكاملة", letter: "D" },
+                    { text: "حفظ التعديلات الحالية في ذاكرة الجهاز الدائمة", letter: "E" }
+                ],
+                rightItems: [
+                    { text: "R1#", letter: "E" },
+                    { text: "R1(config-if)#", letter: "A" },
+                    { text: "R1(config)#", letter: "C" },
+                    { text: "R1(config-line)#", letter: "B" },
+                    { text: "R1>", letter: "D" }
+                ],
+                correctMatches: {
+                    0: 1,
+                    1: 3,
+                    2: 2,
+                    3: 4,
+                    4: 0
+                },
+                explanation: "Global encryption runs in (config)#. 'enable' runs in (>). Copy runs in privilege EXEC (#). 'login' runs under line configuration (config-line)#. IP config runs under interface mode (config-if)#.",
+                explanation_ar: "تشفير كلمات المرور يعمل في التكوين العام (config)#. أمر enable يعمل في وضع المستخدم (>). الحفظ يعمل في وضع الامتيازات (#). أمر التفعيل login تحت الخط (config-line)#. عنوان الـ IP تحت المنفذ (config-if)#."
+            },
+            {
+                id: 36,
+                type: "multi",
+                selectCount: 2,
+                q: "What are two functions of NVRAM? (Choose two.)",
+                q_ar: "ما هي وظيفتان أساسيتان لذاكرة NVRAM في أجهزة سيسكو؟ (اختر اثنتين)",
+                options: [
+                    "to store the routing table",
+                    "to retain contents when power is removed",
+                    "to store the startup configuration file",
+                    "to contain the running configuration file",
+                    "to store the ARP table"
+                ],
+                options_ar: [
+                    "تخزين واستضافة جدول التوجيه النشط (Routing table).",
+                    "الاحتفاظ بالبيانات والمحتويات وتفادي مسحها عند فصل الكهرباء عن الجهاز.",
+                    "تخزين ملف التكوين المحفوظ الأساسي (Startup configuration file).",
+                    "تخزين ملف التكوين الجاري قيد التشغيل والعمل حالياً (Running configuration file).",
+                    "حفظ وتخزين جدول ARP المؤقت."
+                ],
+                correct: [1, 2],
+                explanation: "NVRAM (Non-Volatile RAM) is persistent storage that holds the startup configuration ('startup-config') so the configuration survives router reboots.",
+                explanation_ar: "ذاكرة NVRAM هي ذاكرة غير متطايرة ومستمرة تحتفظ ببيانات الإعدادات المحفوظة ('startup-config') لكي لا تفقد التعديلات بمجرد إعادة تشغيل الموجه."
+            },
+            {
+                id: 37,
+                type: "single",
+                q: "A router boots and enters setup mode. What is the reason for this?",
+                q_ar: "أقلع الموجه ودخل مباشرة في وضع الإعداد المبدئي التلقائي (Setup Mode). ما السبب وراء ذلك؟",
+                options: [
+                    "The IOS image is corrupt.",
+                    "Cisco IOS is missing from flash memory.",
+                    "The configuration file is missing from NVRAM.",
+                    "The POST process has detected hardware failure."
+                ],
+                options_ar: [
+                    "ملف نظام تشغيل IOS معطوب وغير قابل للقراءة.",
+                    "نظام تشغيل سيسكو IOS غير متواجد ومفقود من ذاكرة فلاش.",
+                    "ملف التكوين والإعدادات الأساسية (startup-config) غير متواجد في NVRAM.",
+                    "عملية الفحص الذاتي POST كشفت عن فشل أو عطل في قطع الهاردوير."
+                ],
+                correct: [2],
+                explanation: "If a Cisco device boots up and cannot locate a valid 'startup-config' file in NVRAM, it automatically triggers setup mode to assist with initial manual configuration.",
+                explanation_ar: "إذا أقلع جهاز سيسكو ولم يجد ملف 'startup-config' صالح في ذاكرة NVRAM، فإنه يفترض أنه جديد أو تم مسحه ويدخل تلقائياً لوضع الإعداد المبدئي لإدخال التعليمات."
+            },
+            {
+                id: 38,
+                type: "single",
+                q: "The global configuration command ip default-gateway 172.16.100.1 is applied to a switch. What is the effect of this command?",
+                q_ar: "تم تطبيق الأمر ip default-gateway 172.16.100.1 على المبدل (Switch). ما تأثير هذا الأمر؟",
+                options: [
+                    "The switch will have a management interface with the address 172.16.100.1.",
+                    "The switch can be remotely managed from a host on another network.",
+                    "The switch can communicate with other hosts on the 172.16.100.0 network.",
+                    "The switch is limited to sending and receiving frames to and from the gateway 172.16.100.1."
+                ],
+                options_ar: [
+                    "سيحصل المبدل على واجهة إدارة برمجية تحمل عنوان IP المذكور.",
+                    "يمكن إدارة والتحكم بالمبدل برمجياً عن بعد من جهاز متواجد في شبكة أخرى.",
+                    "يستطيع المبدل التواصل مع الأجهزة الأخرى الموجودة في شبكة 172.16.100.0 فقط.",
+                    "يقتصر المبدل على إرسال واستقبال الإطارات من وإلى البوابة 172.16.100.1 حصرياً."
+                ],
+                correct: [1],
+                explanation: "Configuring the default gateway on a Layer 2 switch enables the switch to reply and route management traffic (SSH/HTTPS) back to remote subnets.",
+                explanation_ar: "إعداد البوابة الافتراضية على مبدل الطبقة الثانية يمنحه القدرة على إرسال وتوجيه حزم الإدارة والردود (مثل SSH) إلى الشبكات البعيدة عبر الموجه."
+            },
+            {
+                id: 39,
+                type: "single",
+                q: "What happens when the transport input ssh command is entered on the switch vty lines?",
+                q_ar: "ماذا يحدث عند تنفيذ وكتابة الأمر transport input ssh تحت خطوط VTY للمبدل؟",
+                options: [
+                    "The SSH client on the switch is enabled.",
+                    "Communication between the switch and remote users is encrypted.",
+                    "The switch requires a username/password combination for remote access.",
+                    "The switch requires remote connections via a proprietary client software."
+                ],
+                options_ar: [
+                    "يتم تفعيل عميل بروتوكول SSH داخل المبدل.",
+                    "يتم تشفير وتأمين جلسة الاتصال بالكامل بين المبدل والمستخدمين البعيدين.",
+                    "سيتطلب المبدل مطابقة اسم المستخدم وكلمة السر كشرط أساسي للسماح بالولوج.",
+                    "سيتطلب المبدل اتصالاً بعيداً عبر برمجيات عميلة تابعة حصرية ومقيدة."
+                ],
+                correct: [1],
+                explanation: "The 'transport input ssh' command disables insecure Telnet and forces incoming remote control sessions to use the secure, encrypted SSH protocol.",
+                explanation_ar: "الأمر 'transport input ssh' يقوم بتعطيل الاتصالات غير الآمنة (مثل Telnet) ويجبر خطوط VTY على قبول الاتصالات المشفرة الآمنة عبر بروتوكول SSH فقط."
+            },
+            {
+                id: 40,
+                type: "single",
+                q: "Refer to the tracert terminal exhibit. www.cisco.com was successfully pinged. Which IP address does the user PC target in order to forward its data off the local network?",
+                q_ar: "بالرجوع لمخرجات terminal للأمر tracert، تم الوصول للموقع بنجاح. ما هو عنوان IP البوابة الافتراضية للوصول خارج الشبكة المحلية؟",
+                hasExhibit: "tracert-terminal",
+                options: ["172.24.255.17", "172.24.1.22", "172.20.0.254", "172.24.255.4", "172.20.1.18"],
+                options_ar: ["172.24.255.17", "172.24.1.22", "172.20.0.254 (القفزة الأولى)", "172.24.255.4", "172.20.1.18"],
+                correct: [2],
+                explanation: "In any traceroute command, the very first hop (Hop 1) represents the local default gateway. In the terminal output, Hop 1 lists 172.20.0.254.",
+                explanation_ar: "في أي فحص تتبع مسار (traceroute)، يمثل السطر والقفزة الأولى (Hop 1) عنوان البوابة الافتراضية للجهاز المحلي، وهنا تظهر بوضوح كـ 172.20.0.254."
+            }
+        ];
+        quizData.push(...iosQuestions);
+    </script>
+
+    <script type="text/babel">
+        const finalBatch = [
+            {
+                id: 41,
+                type: "matching",
+                q: "Match the configuration mode with the command that is available and valid in that mode:",
+                q_ar: "قم بمطابقة وضع التهوئة البرمجي للموجه مع الأمر المناسب والمتاح للاستخدام والتشغيل فيه:",
+                leftItems: [
+                    { text: "R1>", letter: "A" },
+                    { text: "R1(config-line)#", letter: "B" },
+                    { text: "R1#", letter: "C" },
+                    { text: "R1(config)#", letter: "D" }
+                ],
+                leftItems_ar: [
+                    { text: "R1> (وضع المستخدم)", letter: "A" },
+                    { text: "R1(config-line)# (وضع الخط)", letter: "B" },
+                    { text: "R1# (وضع الامتيازات)", letter: "C" },
+                    { text: "R1(config)# (وضع التكوين العام)", letter: "D" }
+                ],
+                rightItems: [
+                    { text: "interface fastethernet 0/0", letter: "D" },
+                    { text: "login", letter: "B" },
+                    { text: "copy running-config startup-config", letter: "C" },
+                    { text: "enable", letter: "A" }
+                ],
+                correctMatches: {
+                    0: 3,
+                    1: 1,
+                    2: 2,
+                    3: 0
+                },
+                explanation: "The enable command is in user mode (>). Copy is in privileged (#). Login is in line mode (config-line)#. Interface is in global configuration (config)#.",
+                explanation_ar: "أمر enable للولوج لوضع الامتيازات يكتب في وضع المستخدم (>). نسخ الإعدادات يكتب في وضع الامتيازات (#). أمر login لتفعيل التحقق يكتب في وضع الخط (config-line)#. تحديد الواجهة يكتب في وضع التكوين العام (config)#."
+            },
+            {
+                id: 42,
+                type: "multi",
+                selectCount: 3,
+                q: "Which three commands are used to set up secure access to a router through a connection to the console interface? (Choose three.)",
+                q_ar: "ما هي الأوامر الثلاثة المستخدمة لإعداد وتأمين الوصول لجهاز الموجه عبر منفذ الكونسول (Console Interface)؟ (اختر ثلاثة)",
+                options: [
+                    "interface fastethernet 0/0",
+                    "line vty 0 4",
+                    "line console 0",
+                    "enable secret cisco",
+                    "login",
+                    "password cisco"
+                ],
+                options_ar: [
+                    "interface fastethernet 0/0",
+                    "line vty 0 4",
+                    "line console 0",
+                    "enable secret cisco",
+                    "login",
+                    "password cisco"
+                ],
+                correct: [2, 4, 5],
+                explanation: "To secure the console: 1. Enter console configuration ('line console 0'). 2. Specify the access password ('password cisco'). 3. Enable validation ('login').",
+                explanation_ar: "لتأمين منفذ الكونسول: 1. الدخول لوضع تكوين خط الكونسول (line console 0). 2. تحديد كلمة المرور المخصصة (password cisco). 3. تفعيل التحقق منها عند الدخول (login)."
+            },
+            {
+                id: 43,
+                type: "single",
+                q: "Refer to the PC1 IP configuration exhibit. What is a description of the default gateway address shown?",
+                q_ar: "بالرجوع لمخرجات تهيئة IP لجهاز PC1، ما هو الوصف الصحيح لعنوان البوابة الافتراضية (Default Gateway) المعروض؟",
+                hasExhibit: "pc1-ip-config",
+                options: [
+                    "It is the IP address of the Router1 interface that connects the company to the Internet.",
+                    "It is the IP address of the Router1 interface that connects the PC1 LAN to Router1.",
+                    "It is the IP address of Switch1 that connects PC1 to other devices on the same LAN.",
+                    "It is the IP address of the ISP network device located in the cloud."
+                ],
+                options_ar: [
+                    "هو عنوان IP الخاص بواجهة الموجه Router1 التي تربط الشركة بشبكة الإنترنت العالمية.",
+                    "هو عنوان IP لمنفذ الموجه Router1 المتصل مباشرة بالشبكة المحلية (LAN) التي يتواجد بها PC1.",
+                    "هو عنوان IP الخاص بالمبدل Switch1 الذي يربط PC1 مع باقي أجهزة نفس الشبكة المحلية.",
+                    "هو عنوان IP الخاص بجهاز مزود خدمة الإنترنت (ISP) الموجود في السحابة."
+                ],
+                correct: [1],
+                explanation: "The default gateway for a host must be the Layer 3 interface on the local router attached directly to the same network segment (the immediate local exit point).",
+                explanation_ar: "يجب أن تكون البوابة الافتراضية لأي مضيف عبارة عن عنوان IP لواجهة الموجه المحلي المتصل مباشرة بقطاع الشبكة التي ينتمي إليها المضيف لتوجيه الحزم عبره."
+            },
+            {
+                id: 44,
+                type: "multi",
+                selectCount: 2,
+                q: "Which two functions are primary functions of a router? (Choose two.)",
+                q_ar: "ما هي وظيفتان رئيسيتان ومحوريتان يقوم بهما جهاز الموجه (Router)؟ (اختر اثنتين)",
+                options: ["packet forwarding", "microsegmentation", "domain name resolution", "path selection", "flow control"],
+                options_ar: ["تمرير وإعادة توجيه الحزم (Packet forwarding)", "التجزئة الدقيقة للشبكات (Microsegmentation)", "ترجمة أسماء النطاقات (DNS Resolution)", "اختيار المسار الأفضل للبيانات (Path selection)", "التحكم بتدفق البيانات وحجمها (Flow control)"],
+                correct: [0, 3],
+                explanation: "The two main jobs of a router are: 1. Path selection (finding the best route using a routing table). 2. Packet forwarding (forwarding the packet out the selected interface).",
+                explanation_ar: "الوظيفتان الأساسيتان للموجه هما: 1. تحديد واختيار المسار الأفضل للوصول للهدف (Path Selection). 2. إرسال وتوجيه الحزم عبر هذا المسار المحدد للوجهة التالية (Packet Forwarding)."
+            },
+            {
+                id: 45,
+                type: "single",
+                q: "What is the effect of using the Router# copy running-config startup-config command on a router?",
+                q_ar: "ما هو التأثير الناتج عن تنفيذ الأمر copy running-config startup-config على الموجه؟",
+                options: ["the contents of ROM will change.", "the contents of RAM will change.", "the contents of NVRAM will change.", "the contents of flash will change."],
+                options_ar: ["ستتغير وتتعدل محتويات ذاكرة القراءة فقط ROM.", "ستتغير وتتعدل محتويات ذاكرة الوصول العشوائي RAM.", "ستتغير وتتعدل محتويات الذاكرة المستمرة NVRAM.", "ستتغير وتتعدل محتويات الذاكرة الوميضية Flash."],
+                correct: [2],
+                explanation: "The copy command copies the active configuration file from volatile RAM to non-volatile NVRAM, writing it over the old 'startup-config'.",
+                explanation_ar: "أمر النسخ يقوم بأخذ نسخة من الإعدادات النشطة حالياً في ذاكرة RAM المتطايرة وحفظها داخل ذاكرة NVRAM المستمرة باسم 'startup-config' لتفادي فقدانها."
+            },
+            {
+                id: 46,
+                type: "single",
+                q: "What will happen if the default gateway address is incorrectly configured on a host?",
+                q_ar: "ماذا سيحدث في حال تم تكوين وإعداد البوابة الافتراضية بشكل خاطئ على مضيف شبكي؟",
+                options: [
+                    "The host cannot communicate with other hosts in the local network.",
+                    "The switch will not forward packets initiated by the host.",
+                    "The host will have to use ARP to determine the correct address of the default gateway.",
+                    "The host cannot communicate with hosts in other networks.",
+                    "A ping from the host to 127.0.0.1 would not be successful."
+                ],
+                options_ar: [
+                    "لن يتمكن المضيف من التواصل والاتصال مع باقي الأجهزة داخل نفس شبكته المحلية.",
+                    "لن يقوم المبدل (Switch) بتوجيه أو تمرير أي حزم منشأة من قبل هذا المضيف.",
+                    "سيضطر المضيف لاستخدام بروتوكول ARP لتحديد العنوان الصحيح للبوابة.",
+                    "لن يتمكن المضيف من الاتصال أو الوصول للأجهزة المتواجدة في الشبكات الأخرى البعيدة.",
+                    "ستفشل عملية إرسال ping من المضيف لعنوان الاختبار الداخلي 127.0.0.1."
+                ],
+                correct: [3],
+                explanation: "Since local communication does not require a router, local connectivity remains intact. However, packets heading outside the subnet cannot reach a gateway, blocking remote access.",
+                explanation_ar: "بما أن الاتصال المحلي لا يتطلب بوابة، يظل الاتصال الداخلي سليماً. ولكن الحزم الموجهة للخارج ستفشل في العثور على مخرج، مما يمنع التواصل مع الشبكات البعيدة."
+            },
+            {
+                id: 47,
+                type: "multi",
+                selectCount: 2,
+                q: "What are two potential network problems that can result from ARP operation? (Choose two.)",
+                q_ar: "ما هما مشكلتان محتملتان في الشبكة يمكن أن ينتجا عن تشغيل بروتوكول ARP؟ (اختر اثنتين)",
+                options: [
+                    "Manually configuring static ARP associations could facilitate ARP poisoning or MAC address spoofing.",
+                    "On large networks with low bandwidth, multiple ARP broadcasts could cause data communication delays.",
+                    "Network attackers could manipulate MAC address and IP address mappings in ARP messages with the intent of intercepting network traffic.",
+                    "Large numbers of ARP request broadcasts could cause the host MAC address table to overflow and prevent the host from communicating on the network.",
+                    "Multiple ARP replies result in the switch MAC address table containing entries that match the MAC addresses of hosts that are connected to the relevant switch port."
+                ],
+                options_ar: [
+                    "التكوين اليدوي لـ ARP الثابت قد يسهل من هجمات انتحال ARP أو انتحال الـ MAC.",
+                    "في الشبكات الضخمة ذات النطاقات الترددية المنخفضة، يمكن للبث الهائل لـ ARP أن يسبب بطء وتأخر في حركة البيانات.",
+                    "يمكن للمهاجمين التلاعب بمطابقات الـ IP والـ MAC في رسائل ARP بقصد اعتراض حركة البيانات على الشبكة (الوسيط في المنتصف).",
+                    "يمكن للأعداد الهائلة من بث ARP أن تسبب امتلاء جدول عناوين الـ MAC للأجهزة وتمنعها من الاتصال.",
+                    "تتسبب ردود ARP المتعددة في امتلاء جدول عناوين MAC للمبدل ببيانات مطابقة لعناوين المضيفين المتصلين بالمنافذ الفعالة."
+                ],
+                correct: [1, 2],
+                explanation: "The vulnerabilities of ARP include: 1. Heavy broadcast overhead that can flood low-bandwidth LAN segments. 2. Lack of security verification, enabling malicious actors to perform ARP poisoning (MitM attacks).",
+                explanation_ar: "من عيوب ARP الأساسية: 1. استهلاك النطاق الترددي بسبب استخدام البث الكلي (Broadcast) بكثافة في الشبكات الواسعة. 2. انعدام التوثيق والأمان مما يجعله عرضة للهجمات وتزوير العناوين لاختطاف البيانات."
+            },
+            {
+                id: 48,
+                type: "single",
+                q: "Refer to the Packet Tracer topology description. Routers R1 and R2 interfaces were configured. Which interfaces on each router are active and operational (status up, protocol up)?",
+                q_ar: "بالرجوع لوصف الطوبولوجيا، تم إعداد واجهات الموجهين R1 و R2. أي المنافذ في كل منهما تعمل بشكل كامل ونشط حالياً (Status up / Protocol up)؟",
+                hasExhibit: "pt-operational-topology",
+                options: [
+                    "R1: G0/0 and S0/0/0 | R2: G0/0 and S0/0/0",
+                    "R1: G0/1 and S0/0/1 | R2: G0/0 and S0/0/1",
+                    "R1: G0/0 and S0/0/0 | R2: G0/1 and S0/0/0",
+                    "R1: G0/0 and S0/0/1 | R2: G0/1 and S0/0/1"
+                ],
+                options_ar: [
+                    "R1: G0/0 and S0/0/0 | R2: G0/0 and S0/0/0",
+                    "R1: G0/1 and S0/0/1 | R2: G0/0 and S0/0/1",
+                    "R1: G0/0 and S0/0/0 | R2: G0/1 and S0/0/0",
+                    "R1: G0/0 and S0/0/1 | R2: G0/1 and S0/0/1"
+                ],
+                correct: [2],
+                explanation: "Based on standard CCNA lab diagnostics: R1's active gigabit connection to the left subnets is G0/0 and its serial link is S0/0/0. R2's active gigabit link is G0/1 and serial link is S0/0/0. Both have status and protocol as 'up'.",
+                explanation_ar: "بناءً على تشخيص المعمل: الواجهة النشطة لـ R1 باتجاه اليسار هي G0/0 والمنفذ التسلسلي هو S0/0/0. بينما الواجهة النشطة لـ R2 لليمين هي G0/1 والمنفذ التسلسلي S0/0/0."
+            },
+            {
+                id: 49,
+                type: "single",
+                q: "Which term describes a field in the IPv4 packet header used to identify the next level protocol?",
+                q_ar: "ما هو المصطلح الذي يصف حتمية وجود حقل في ترويسة IPv4 لتحديد بروتوكول الطبقة الأعلى التالية؟",
+                options: ["protocol", "destination IPv4 address", "source IPv4 address", "TTL"],
+                options_ar: ["البروتوكول (protocol)", "عنوان IPv4 الوجهة", "عنوان IPv4 المصدر", "حقل وقت الصلاحية TTL"],
+                correct: [0],
+                explanation: "The 'Protocol' field in the IPv4 header is an 8-bit binary value indicating which network layer payload protocol is carried (e.g., 6 for TCP, 17 for UDP).",
+                explanation_ar: "حقل البروتوكول (Protocol) هو حقل بحجم 8 بت في ترويسة IPv4 يحدد بروتوكول طبقة النقل المحمول في حزمة البيانات (مثل القيمة 6 لـ TCP و 17 لـ UDP)."
+            },
+            {
+                id: 50,
+                type: "single",
+                q: "Which term describes a field in the IPv4 packet header that contains an 8-bit binary value used to determine the priority of each packet?",
+                q_ar: "أي حقل في ترويسة حزمة IPv4 يحتوي على قيمة ثنائية بحجم 8 بت تُستخدم لتحديد مستوى أولوية معالجة كل حزمة؟",
+                options: ["differentiated services", "destination IPv4 address", "source IPv4 address", "protocol"],
+                options_ar: ["الخدمات المتميزة (differentiated services)", "عنوان IPv4 الوجهة", "عنوان IPv4 المصدر", "البروتوكول (protocol)"],
+                correct: [0],
+                explanation: "The Differentiated Services (DS) field (formerly Type of Service) is used for Quality of Service (QoS) packet classification and prioritization.",
+                explanation_ar: "حقل الخدمات المتميزة (Differentiated Services) يُسخدم في جودة الخدمة (QoS) لتصنيف وإعطاء أولوية المرور للحزم الهامة (كالصوت)."
+            },
+            {
+                id: 51,
+                type: "single",
+                q: "Which term describes a field in the IPv4 packet header that contains a 32-bit binary value associated with an interface on the sending device?",
+                q_ar: "أي حقل في ترويسة IPv4 يحتوي على قيمة ثنائية بحجم 32 بت ترتبط ارتباطاً مباشراً بواجهة الجهاز المرسل للبيانات؟",
+                options: ["source IPv4 address", "destination IPv4 address", "protocol", "TTL"],
+                options_ar: ["عنوان IPv4 المصدر (source IPv4 address)", "عنوان IPv4 الوجهة", "البروتوكول", "حقل وقت الصلاحية TTL"],
+                correct: [0],
+                explanation: "The Source IPv4 Address is a fixed 32-bit field containing the logical IP address of the node sending the packet.",
+                explanation_ar: "عنوان IPv4 المصدر (Source IP) هو حقل ثابت بحجم 32 بت يحمل العنوان المنطقي الفريد للمنفذ الذي أطلق الحزمة في الشبكة."
+            },
+            {
+                id: 52,
+                type: "single",
+                q: "Which term describes a field in the IPv4 packet header used to detect corruption in the IPv4 header?",
+                q_ar: "أي حقل في ترويسة حزمة IPv4 يُستعمل حصرياً للكشف والتحقق من سلامة الترويسة من أي عطب أو تداخل؟",
+                options: ["header checksum", "source IPv4 address", "protocol", "TTL"],
+                options_ar: ["مجموع فحص الترويسة (header checksum)", "عنوان IPv4 المصدر", "البروتوكول", "حقل وقت الصلاحية TTL"],
+                correct: [0],
+                explanation: "The Header Checksum field is used by receiving devices and routers to verify if the Layer 3 IP header fields were corrupted in transit.",
+                explanation_ar: "حقل Header Checksum مخصص لفحص سلامة ترويسة الطبقة الثالثة فقط للتأكد من عدم حدوث تداخل أو تلف للبيانات أثناء انتقالها."
+            },
+            {
+                id: 53,
+                type: "single",
+                q: "Refer to the router configuration output. A network administrator is connecting a new host to the Payroll LAN. The host needs to communicate with remote networks. What IP address would be configured as the default gateway on the new host?",
+                q_ar: "بالرجوع لمخرجات تهيئة الموجه RTR1، يقوم مهندس بربط مضيف جديد بشبكة Payroll LAN للاتصال بالخارج. ما عنوان البوابة الافتراضية المناسب لهذا الجهاز؟",
+                hasExhibit: "rtr1-payroll-config",
+                options: ["10.27.14.148", "10.27.14.1", "10.14.15.254", "203.0.113.39", "10.27.15.17"],
+                options_ar: ["10.27.14.148", "10.27.14.1", "10.14.15.254", "203.0.113.39", "10.27.15.17"],
+                correct: [0],
+                explanation: "The 'Connects to the Payroll LAN' description belongs to interface gi0/0, which has the IP 10.27.14.148. Thus, hosts on the Payroll subnet must target this interface IP as their gateway.",
+                explanation_ar: "الوصف 'Connects to the Payroll LAN' يتبع المنفذ gi0/0 والذي يحمل عنوان IP 10.27.14.148. لذا يجب تعيين هذا العنوان كبوابة افتراضية للمضيفين هناك."
+            },
+            {
+                id: 54,
+                type: "single",
+                q: "Which term describes a field in the IPv4 packet header that contains a unicast, multicast, or broadcast address?",
+                q_ar: "ما هو الحقل في ترويسة حزمة IPv4 الذي يمكن أن يحتوي على عنوان فردي (Unicast)، أو جماعي (Multicast)، أو بث كلي (Broadcast)؟",
+                options: ["destination IPv4 address", "protocol", "TTL", "header checksum"],
+                options_ar: ["عنوان IPv4 الوجهة (destination IPv4 address)", "البروتوكول", "حقل وقت الصلاحية TTL", "مجموع فحص الترويسة"],
+                correct: [0],
+                explanation: "The Destination IPv4 Address (32-bit) represents the recipient(s). It can be configured as a unicast, multicast, or broadcast target.",
+                explanation_ar: "عنوان IPv4 الوجهة (Destination IP) بحجم 32 بت هو الهدف الذي وجهت إليه الحزمة، ويمكن أن يكون عنواناً فردياً أو جماعياً أو بثاً كلياً."
+            },
+            {
+                id: 55,
+                type: "single",
+                q: "Which term describes a field in the IPv4 packet header used to limit the lifetime of a packet?",
+                q_ar: "أي مصطلح يصف حقل في ترويسة حزمة IPv4 يعمل على وضع حد تشغيلي وفترة صلاحية لعمر الحزمة؟",
+                options: ["TTL", "source IPv4 address", "protocol", "header checksum"],
+                options_ar: ["حقل وقت الصلاحية TTL (Time-to-Live)", "عنوان IPv4 المصدر", "البروتوكول", "مجموع فحص الترويسة"],
+                correct: [0],
+                explanation: "TTL (Time-to-Live) limits a packet's lifetime. Decremented by 1 at each hop; when it drops to 0, the packet is deleted, shielding the network from loop clutter.",
+                explanation_ar: "حقل وقت الصلاحية TTL يحدد مدى بقاء الحزمة في الشبكة لحمايتها من الدوران اللانهائي، حيث يتم إنقاصه عند كل قفزة."
+            },
+            {
+                id: 56,
+                type: "single",
+                q: "Which term describes a field in the IPv4 packet header that contains a 4-bit binary value set to 0100?",
+                q_ar: "ما هو الحقل في ترويسة حزمة IPv4 الذي يحتوي على قيمة ثنائية بحجم 4 بت وتساوي دائماً القيمة 0100؟",
+                options: ["version", "source IPv4 address", "protocol", "TTL"],
+                options_ar: ["حقل الإصدار (version)", "عنوان IPv4 المصدر", "البروتوكول", "حقل وقت الصلاحية TTL"],
+                correct: [0],
+                explanation: "The Version field identifies the IP version. 0100 in binary is 4, which designates an IPv4 structure.",
+                explanation_ar: "حقل الإصدار (Version) يحدد نسخة البروتوكول؛ القيمة 0100 بالثنائي تكافئ 4، وتدل على معايير الإصدار الرابع للبروتوكول IPv4."
+            },
+            {
+                id: 57,
+                type: "single",
+                q: "Which term describes a field in the IPv4 packet header used to identify the next level protocol? (Re-verification Item)",
+                q_ar: "أي حقل في ترويسة IPv4 يحدد بروتوكول الطبقة الأعلى التالية؟ (صياغة للتأكيد)",
+                options: ["protocol", "version", "differentiated services", "header checksum"],
+                options_ar: ["البروتوكول (protocol)", "حقل الإصدار", "الخدمات المتميزة", "مجموع فحص الترويسة"],
+                correct: [0],
+                explanation: "The Protocol field specifies the transport protocol inside the network layer payload, which helps with de-multiplexing at the receiver.",
+                explanation_ar: "حقل البروتوكول يخبر الجهاز المستقبل بنوع بروتوكول النقل المستخدم (مثل TCP أو UDP) لتوجيه البيانات له مباشرة."
+            },
+            {
+                id: 58,
+                type: "single",
+                q: "Which term describes a field in the IPv4 packet header that contains a 4-bit binary value set to 0100? (Re-verification)",
+                q_ar: "أي حقل في ترويسة حزمة IPv4 يحمل القيمة الثنائية 0100؟ (سؤال للتأكيد والتحقق)",
+                options: ["version", "differentiated services", "header checksum", "TTL"],
+                options_ar: ["حقل الإصدار (version)", "الخدمات المتميزة", "مجموع فحص الترويسة", "حقل وقت الصلاحية TTL"],
+                correct: [0],
+                explanation: "0100 is binary for 4, configured inside the 4-bit Version field of the IPv4 packet header.",
+                explanation_ar: "القيمة 0100 تعادل الرقم 4 بالثنائي، ويتم تخزينها في حقل الإصدار (Version) ذي الـ 4 بت لإصدار IPv4."
+            },
+            {
+                id: 59,
+                type: "single",
+                q: "What property of ARP causes cached IP-to-MAC mappings to remain in memory longer?",
+                q_ar: "ما هي خاصية بروتوكول ARP التي تجعل مطابقات عناوين IP-to-MAC المخزنة تظل مستقرة في الذاكرة لفترة أطول؟",
+                options: [
+                    "Entries in an ARP table are time-stamped and are purged after the timeout expires.",
+                    "A static IP-to-MAC address entry can be entered manually into an ARP table.",
+                    "The type field 0x806 appears in the header of the Ethernet frame.",
+                    "The port-to-MAC address table on a switch has the same entries as the ARP table on the switch."
+                ],
+                options_ar: [
+                    "يتم تمييز إدخالات جدول ARP بختم زمني وتطهيرها بعد انتهاء المهلة الافتراضية.",
+                    "إمكانية إدخال مطابقة عنوان IP بـ MAC بشكل ثابت ويدوي (Static Entry) داخل جدول ARP.",
+                    "ظهور حقل النوع بقيمة الترميز 0x806 في ترويسة إطار الإيثرنت.",
+                    "تطابق جدول المنافذ MAC على المبدل مع نفس إدخالات جدول ARP الخاص بالمبدل."
+                ],
+                correct: [1],
+                explanation: "Unlike dynamic entries which expire and clear based on an aging timer, manually configured static ARP entries stay in memory permanently until manually deleted.",
+                explanation_ar: "على عكس الإدخالات الديناميكية التي تنتهي بمرور الوقت، تظل إدخالات ARP الثابتة (Static) التي يكتبها المسؤول يدوياً محفوظة للأبد دون تأثر بمؤقت الفقدان."
+            },
+            {
+                id: 60,
+                type: "single",
+                q: "What property of ARP allows MAC addresses of frequently used servers to be fixed in the ARP table?",
+                q_ar: "ما هي ميزة بروتوكول ARP التي تسمح بتثبيت واستقرار عناوين MAC للخوادم شائعة الاستخدام في جدول الـ ARP بشكل دائم؟",
+                options: [
+                    "A static IP-to-MAC address entry can be entered manually into an ARP table.",
+                    "Entries in an ARP table are time-stamped and are purged after the timeout expires.",
+                    "The type field 0x806 appears in the header of the Ethernet frame.",
+                    "The port-to-MAC address table on a switch has the same entries as the ARP table on the switch."
+                ],
+                options_ar: [
+                    "إمكانية برمجة وحفظ إدخال ثابت (Static IP-to-MAC address entry) يدوياً في جدول ARP.",
+                    "تمييز الإدخالات ديناميكياً بختم زمني لتطهيرها بعد انتهاء وقت محدد.",
+                    "استخدام حقل النوع بقيمة 0x806 في ترويسة الإطار.",
+                    "أن جدول الـ MAC وجدول الـ ARP يتطابقان كلياً في المبدل."
+                ],
+                correct: [0],
+                explanation: "Configuring a static mapping allows vital device addresses (like database or web servers) to stay permanent in the ARP table, ensuring reliable access and bypassing lookup delays.",
+                explanation_ar: "تكوين مطابقات ARP ثابتة يدوياً يضمن ثبات وحفظ عناوين الخوادم الهامة بالذاكرة بشكل دائم ومستمر لضمان سرعة الوصول والاستقرار."
+            },
+            {
+                id: 61,
+                type: "single",
+                q: "What property of ARP allows MAC addresses of frequently used servers to be fixed in the ARP table? (Reframed Variant)",
+                q_ar: "ما هي السمة التي تمكن من تثبيت عناوين الملقمات المهمة في جدول ARP للجهاز؟ (صياغة بديلة)",
+                options: [
+                    "A static IP-to-MAC address entry can be entered manually into an ARP table.",
+                    "The destination MAC address FF-FF-FF-FF-FF-FF appears in the header of the Ethernet frame.",
+                    "The source MAC address appears in the header of the Ethernet frame.",
+                    "The port-to-MAC address table on a switch has the same entries as the ARP table on the switch."
+                ],
+                options_ar: [
+                    "إدخال وتكوين مطابقات ثابتة يدوياً داخل جدول ARP للمضيف.",
+                    "ظهور عنوان بث الوجهة FF-FF-FF-FF-FF-FF في ترويسة إطار الإيثرنت.",
+                    "ظهور عنوان MAC المصدر في ترويسة إطار الإيثرنت.",
+                    "التطابق الكامل بين جداول المبدل للـ MAC والـ ARP."
+                ],
+                correct: [0],
+                explanation: "Static ARP configurations bypass the automated dynamic timeout timers, which is highly recommended for optimizing access to mission-critical local servers.",
+                explanation_ar: "مطابقات ARP الثابتة تلغي مؤقتات الفقدان التلقائية، وهي موصى بها بشدة لحماية العناوين الحساسة كالسيرفرات والتحقق منها فوراً."
+            },
+            {
+                id: 62,
+                type: "single",
+                q: "What property of ARP allows hosts on a LAN to send traffic to remote networks?",
+                q_ar: "ما هي خاصية بروتوكول ARP التي تمكن الأجهزة المضيفة على الشبكة المحلية من إرسال البيانات للشبكات البعيدة؟",
+                options: [
+                    "Local hosts learn the MAC address of the default gateway.",
+                    "The destination MAC address FF-FF-FF-FF-FF-FF appears in the header of the Ethernet frame.",
+                    "The source MAC address appears in the header of the Ethernet frame.",
+                    "The port-to-MAC address table on a switch has the same entries as the ARP table on the switch."
+                ],
+                options_ar: [
+                    "تعلم واكتساب الأجهزة المحلية لعنوان MAC الفيزيائي الخاص بالبوابة الافتراضية (Default Gateway).",
+                    "استخدام عنوان MAC الوجهة المفتوح FF-FF-FF-FF-FF-FF في ترويسة الإطار.",
+                    "إدراج عنوان MAC المصدر بوضوح في ترويسة إطار الإيثرنت.",
+                    "أن جدول الـ MAC وجدول الـ ARP يتشاركان نفس البيانات على المبدل."
+                ],
+                correct: [0],
+                explanation: "To route packets outside the LAN, a host must target the physical address of its default gateway. Using ARP, the host resolves and learns the MAC address of the gateway to encapsulate local frames properly.",
+                explanation_ar: "لإرسال حزم للشبكات البعيدة، يحتاج المضيف لإرسال الإطار للعنوان الفيزيائي للبوابة الافتراضية. ويستعمل ARP لمعرفة عنوان الـ MAC الخاص بهذه البوابة."
+            },
+            {
+                id: 63,
+                type: "single",
+                q: "Refer to the router configuration output. A network administrator is connecting a new host to the Registrar LAN. The host needs to communicate with remote networks. What IP address would be configured as the default gateway on the new host?",
+                q_ar: "بالرجوع لمخرجات تهيئة الموجه Floor، يربط مهندس جهازاً جديداً بشبكة Registrar LAN. ما عنوان البوابة الافتراضية الملائم لهذا الجهاز؟",
+                hasExhibit: "floor-registrar-config",
+                options: ["192.168.235.234", "192.168.235.1", "10.234.235.254", "203.0.113.3", "192.168.234.114"],
+                options_ar: ["192.168.235.234", "192.168.235.1", "10.234.235.254", "203.0.113.3", "192.168.234.114"],
+                correct: [0],
+                explanation: "The Registrar LAN description belongs to interface gi0/1, which has the IP address 192.168.235.234. Hosts connected to this segment must use this IP as their default gateway.",
+                explanation_ar: "منفذ gi0/1 يحمل الوصف 'Connects to the Registrar LAN' وهو مهيأ بـ IP 192.168.235.234. لذا يجب تعيين هذا العنوان كبوابتهم للخارج."
+            },
+            {
+                id: 64,
+                type: "single",
+                q: "What property of ARP forces all Ethernet NICs to process an ARP request?",
+                q_ar: "ما هي ميزة بروتوكول ARP التي تجبر كافة كروت الشبكة (NICs) المتصلة بالقطاع على معالجة طلب الـ ARP المستلم؟",
+                options: [
+                    "The destination MAC address FF-FF-FF-FF-FF-FF appears in the header of the Ethernet frame.",
+                    "The source MAC address appears in the header of the Ethernet frame.",
+                    "The type field 0x806 appears in the header of the Ethernet frame.",
+                    "ARP replies are broadcast on the network when a host receives an ARP request."
+                ],
+                options_ar: [
+                    "ظهور واستخدام عنوان MAC الوجهة للبث العام FF-FF-FF-FF-FF-FF في ترويسة إطار الإيثرنت.",
+                    "ظهور عنوان MAC المصدر في ترويسة إطار الإيثرنت.",
+                    "استخدام حقل النوع بقيمة الترميز 0x806 في ترويسة إطار الإيثرنت.",
+                    "بث جميع ردود الـ ARP بشكل عشوائي للجميع بمجرد استلام الطلب."
+                ],
+                correct: [0],
+                explanation: "An ARP request is sent to the Layer 2 broadcast address FF-FF-FF-FF-FF-FF, which instructs all local network adapters to receive and process the frame payload.",
+                explanation_ar: "يُرسل طلب الـ ARP مستهدفاً عنوان البث الكلي FF-FF-FF-FF-FF-FF للطبقة الثانية، مما يلزم كافة كروت الشبكة باستقباله ومعالجته برمجياً."
+            },
+            {
+                id: 65,
+                type: "single",
+                q: "What property of ARP causes a reply only to the source sending an ARP request?",
+                q_ar: "ما هي ميزة بروتوكول ARP التي تجعل الرد على الطلب (ARP Reply) موجهاً فقط وحصرياً للمصدر الذي بدأ بإرسال الطلب؟",
+                options: [
+                    "The source MAC address appears in the header of the Ethernet frame.",
+                    "The destination MAC address FF-FF-FF-FF-FF-FF appears in the header of the Ethernet frame.",
+                    "The type field 0x806 appears in the header of the Ethernet frame.",
+                    "ARP replies are broadcast on the network when a host receives an ARP request."
+                ],
+                options_ar: [
+                    "تضمين واستخدام عنوان MAC المصدر الأصلي بوضوح في ترويسة إطار طلب الـ ARP المستلم.",
+                    "استخدام عنوان الوجهة العام FF-FF-FF-FF-FF-FF في ترويسة إطار الإيثرنت.",
+                    "استخدام حقل النوع بالرمز 0x806 في ترويسة إطار الإيثرنت.",
+                    "بث ردود ARP على مستوى الشبكة بالكامل عند استلام طلب ARP."
+                ],
+                correct: [0],
+                explanation: "The target host uses the source MAC address stored in the incoming ARP request header to send a direct, unicast ARP reply back to the originating host.",
+                explanation_ar: "يقوم المضيف المستهدف بقراءة عنوان MAC المصدر الموجود في ترويسة الطلب ليرسل رد الـ ARP كإطار أحادي مباشر (Unicast) للمرسل فقط."
+            },
+            {
+                id: 66,
+                type: "single",
+                q: "What property of ARP causes the request to be flooded out all ports of a switch except for the port receiving the ARP request?",
+                q_ar: "ما هي خاصية بروتوكول ARP التي تجعل المبدل يقوم ببث الإطار عبر كافة منافذه النشطة ما عدا منفذ استقبال الإطار؟",
+                options: [
+                    "The destination MAC address FF-FF-FF-FF-FF-FF appears in the header of the Ethernet frame.",
+                    "The type field 0x806 appears in the header of the Ethernet frame.",
+                    "Entries in an ARP table are time-stamped and are purged after the timeout expires.",
+                    "ARP replies are broadcast on the network when a host receives an ARP request."
+                ],
+                options_ar: [
+                    "استخدام عنوان الوجهة للبث FF-FF-FF-FF-FF-FF في ترويسة إطار الإيثرنت.",
+                    "استخدام حقل النوع بالترميز 0x806 في ترويسة إطار الإيثرنت.",
+                    "تمييز إدخالات الـ ARP بختم زمني لتطهيرها بعد فترات انتهاء الصلاحية.",
+                    "بث الردود على نطاق الشبكة بالكامل عند استقبال طلب ARP."
+                ],
+                correct: [0],
+                explanation: "The destination broadcast MAC address (FF-FF-FF-FF-FF-FF) forces the Layer 2 switch to flood the frame out of all active ports, except the incoming port.",
+                explanation_ar: "توجيه الطلب لعنوان البث الكلي FF-FF-FF-FF-FF-FF يلزم مبدل الطبقة الثانية بتمريره وبثه عبر كافة المنافذ لتأمين وصوله لجميع الأجهزة."
+            },
+            {
+                id: 67,
+                type: "single",
+                q: "What property of ARP causes the NICs receiving an ARP request to pass the data portion of the Ethernet frame to the ARP process?",
+                q_ar: "ما هي ميزة بروتوكول ARP التي تجعل كرت الشبكة (NIC) المستقبل لطلب الـ ARP يقوم بتمرير حمولة البيانات مباشرة لبرنامج معالجة الـ ARP بالمسار السريع؟",
+                options: [
+                    "The type field 0x806 appears in the header of the Ethernet frame.",
+                    "The destination MAC address FF-FF-FF-FF-FF-FF appears in the header of the Ethernet frame.",
+                    "Entries in an ARP table are time-stamped and are purged after the timeout expires.",
+                    "ARP replies are broadcast on the network when a host receives an ARP request."
+                ],
+                options_ar: [
+                    "وجود واستخدام حقل النوع (EtherType) بقيمة الترميز 0x0806 في ترويسة إطار الإيثرنت.",
+                    "استخدام عنوان الوجهة المفتوح FF-FF-FF-FF-FF-FF في ترويسة الإطار.",
+                    "تطهير الإدخالات تلقائياً ومسحها من الذاكرة بناءً على مؤقت المهلة.",
+                    "إرسال ردود ARP كبث عشوائي بمجرد تلبية واستقبال أي طلب."
+                ],
+                correct: [0],
+                explanation: "The EtherType value of 0x0806 explicitly tells the receiving network interface card that the payload contains an ARP message, routing it directly to the system's ARP processor.",
+                explanation_ar: "وجود القيمة السداسية عشر 0x0806 في حقل النوع (EtherType) يخبر كرت الشبكة أن الحمولة هي رسالة ARP، فيحولها فوراً لمعالج ARP المدمج."
+            }
+        ];
+        quizData.push(...finalBatch);
+    </script>
+
+    <script type="text/babel">
+        function App() {
+            const [view, setView] = useState('start'); // 'start' | 'quiz' | 'result'
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [selectedIndices, setSelectedIndices] = useState([]);
+            const [isSubmitted, setIsSubmitted] = useState(false);
+            const [arabicTranslation, setArabicTranslation] = useState(true);
+            const [wrongAnswers, setWrongAnswers] = useState([]);
+            
+            // Dynamic Interactive SVG Pin Matching State
+            // Maps leftIndex -> rightIndex
+            const [matchingState, setMatchingState] = useState({});
+            const [activeLeftItem, setActiveLeftItem] = useState(null);
+            const [pinCoords, setPinCoords] = useState({});
+            
+            const containerRef = useRef(null);
+            const currentQ = quizData[currentIndex];
+
+            // Re-calculate SVG connector pin coordinates on action/resize
+            const calculatePinCoordinates = () => {
+                if (!containerRef.current || currentQ.type !== 'matching') return;
+                
+                setTimeout(() => {
+                    const parentRect = containerRef.current.getBoundingClientRect();
+                    const newCoords = {};
+
+                    currentQ.leftItems.forEach((_, idx) => {
+                        const pinEl = document.getElementById(`left-pin-${idx}`);
+                        if (pinEl) {
+                            const rect = pinEl.getBoundingClientRect();
+                            newCoords[`left-${idx}`] = {
+                                x: rect.left - parentRect.left + rect.width / 2,
+                                y: rect.top - parentRect.top + rect.height / 2
+                            };
+                        }
+                    });
+
+                    currentQ.rightItems.forEach((_, idx) => {
+                        const pinEl = document.getElementById(`right-pin-${idx}`);
+                        if (pinEl) {
+                            const rect = pinEl.getBoundingClientRect();
+                            newCoords[`right-${idx}`] = {
+                                x: rect.left - parentRect.left + rect.width / 2,
+                                y: rect.top - parentRect.top + rect.height / 2
+                            };
+                        }
+                    });
+
+                    setPinCoords(newCoords);
+                }, 50);
+            };
+
+            useEffect(() => {
+                calculatePinCoordinates();
+                window.addEventListener('resize', calculatePinCoordinates);
+                return () => window.removeEventListener('resize', calculatePinCoordinates);
+            }, [currentIndex, view]);
+
+            const resetQuiz = () => {
+                setCurrentIndex(0);
+                setScore(0);
+                setSelectedIndices([]);
+                setMatchingState({});
+                setActiveLeftItem(null);
+                setIsSubmitted(false);
+                setWrongAnswers([]);
+                setView('start');
+            };
+
+            const toggleOption = (idx) => {
+                if (isSubmitted) return;
+                
+                if (currentQ.type === 'single') {
+                    setSelectedIndices([idx]);
+                } else {
+                    if (selectedIndices.includes(idx)) {
+                        setSelectedIndices(prev => prev.filter(item => item !== idx));
+                    } else {
+                        if (selectedIndices.length < currentQ.selectCount) {
+                            setSelectedIndices(prev => [...prev, idx]);
+                        }
+                    }
+                }
+            };
+
+            // Custom node matching algorithm triggers
+            const selectLeftPin = (leftIdx) => {
+                if (isSubmitted) return;
+                setActiveLeftItem(leftIdx);
+            };
+
+            const selectRightPin = (rightIdx) => {
+                if (isSubmitted || activeLeftItem === null) return;
+                
+                setMatchingState(prev => {
+                    const newState = { ...prev };
+                    
+                    // Clear previous connections to the same target node to maintain unique matching
+                    Object.keys(newState).forEach(key => {
+                        if (newState[key] === rightIdx) {
+                            delete newState[key];
+                        }
+                    });
+
+                    newState[activeLeftItem] = rightIdx;
+                    return newState;
+                });
+                setActiveLeftItem(null);
+                calculatePinCoordinates();
+            };
+
+            const resetMatches = () => {
+                if (isSubmitted) return;
+                setMatchingState({});
+                setActiveLeftItem(null);
+            };
+
+            const handleSubmitAnswer = () => {
+                if (isSubmitted) return;
+
+                if (currentQ.type === 'matching') {
+                    if (Object.keys(matchingState).length < currentQ.leftItems.length) return;
+
+                    let isCorrect = true;
+                    currentQ.leftItems.forEach((_, idx) => {
+                        if (matchingState[idx] !== currentQ.correctMatches[idx]) {
+                            isCorrect = false;
+                        }
+                    });
+
+                    if (isCorrect) {
+                        setScore(prev => prev + 1);
+                    } else {
+                        setWrongAnswers(prev => [...prev, {
+                            question: currentQ,
+                            userSelection: { ...matchingState },
+                            type: 'matching'
+                        }]);
+                    }
+                } else {
+                    if (selectedIndices.length === 0) return;
+
+                    const sortedSelected = [...selectedIndices].sort();
+                    const sortedCorrect = [...currentQ.correct].sort();
+                    const isCorrect = JSON.stringify(sortedSelected) === JSON.stringify(sortedCorrect);
+
+                    if (isCorrect) {
+                        setScore(prev => prev + 1);
+                    } else {
+                        setWrongAnswers(prev => [...prev, {
+                            question: currentQ,
+                            userSelection: selectedIndices,
+                            type: currentQ.type
+                        }]);
+                    }
+                }
+
+                setIsSubmitted(true);
+            };
+
+            const nextQuestion = () => {
+                if (currentIndex < quizData.length - 1) {
+                    setCurrentIndex(prev => prev + 1);
+                    setSelectedIndices([]);
+                    setMatchingState({});
+                    setActiveLeftItem(null);
+                    setIsSubmitted(false);
+                } else {
+                    setView('result');
+                }
+            };
+
+            const jumpToQuestion = (idx) => {
+                if (!isSubmitted) {
+                    setCurrentIndex(idx);
+                    setSelectedIndices([]);
+                    setMatchingState({});
+                    setActiveLeftItem(null);
+                    setIsSubmitted(false);
+                } else {
+                    setCurrentIndex(idx);
+                }
+            };
+
+            const progress = ((currentIndex + 1) / quizData.length) * 100;
+
+            if (view === 'start') {
+                return (
+                    <div className="min-h-[85vh] flex items-center justify-center p-4">
+                        <div className="glass-card max-w-3xl w-full p-8 md:p-12 rounded-3xl shadow-2xl text-center border border-indigo-500/20">
+                            <div className="w-24 h-24 bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl shadow-lg shadow-indigo-500/25">
+                                <i className="fas fa-network-wired"></i>
+                            </div>
+                            <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-3 tracking-wide">
+                                CCNA ITN Modules 8 - 10
+                            </h1>
+                            <p className="text-indigo-400 font-semibold text-lg md:text-xl mb-8">
+                                Communicating Between Networks Exam Simulator
+                            </p>
+                            
+                            <div className="grid grid-cols-3 gap-4 mb-8">
+                                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+                                    <span className="block text-indigo-400 font-bold text-3xl">{quizData.length}</span>
+                                    <span className="text-slate-400 text-xs mt-1 block">Full Questions</span>
+                                </div>
+                                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+                                    <span className="block text-purple-400 font-bold text-3xl">100%</span>
+                                    <span className="text-slate-400 text-xs mt-1 block">Real Answers</span>
+                                </div>
+                                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+                                    <span className="block text-emerald-400 font-bold text-3xl">L3 & L2</span>
+                                    <span className="text-slate-400 text-xs mt-1 block">IP & ARP Focus</span>
+                                </div>
+                            </div>
+
+                            <div className="bg-indigo-950/20 p-5 rounded-2xl text-left border border-indigo-900/30 mb-8 max-w-xl mx-auto">
+                                <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+                                    <i className="fas fa-circle-check text-indigo-400"></i>
+                                    Key Capabilities Added:
+                                </h3>
+                                <ul className="text-slate-300 text-sm space-y-2.5 list-none pl-1">
+                                    <li className="flex items-start gap-2">
+                                        <i className="fas fa-chevron-right text-indigo-500 mt-1 text-xs"></i>
+                                        <span><strong>Interactive Matching (Connecting Point A to B):</strong> Click on any node on the left, then click its corresponding definition on the right. Beautiful lines will physically connect them.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <i className="fas fa-chevron-right text-indigo-500 mt-1 text-xs"></i>
+                                        <span><strong>Interactive Bilingual Translation:</strong> Toggle Arabic/English translation instantly during the test.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <i className="fas fa-chevron-right text-indigo-500 mt-1 text-xs"></i>
+                                        <span><strong>Integrated Diagrams & Mock CLI Output:</strong> View complete topology maps and routing tables drawn natively with Tailwind/SVGs.</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <button 
+                                onClick={() => setView('quiz')}
+                                className="w-full max-w-md bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.01] active:scale-95 shadow-xl shadow-indigo-500/20 text-lg"
+                            >
+                                Start Realistic Exam
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (view === 'result') {
+                const percentage = (score / quizData.length) * 100;
+                return (
+                    <div className="min-h-screen py-6">
+                        <div className="glass-card max-w-4xl w-full mx-auto p-6 md:p-10 rounded-3xl shadow-2xl border border-slate-800">
+                            <h2 className="text-3xl md:text-4xl font-extrabold text-white text-center mb-2">Exam Result</h2>
+                            <p className="text-slate-400 text-center mb-8">Modules 8-10: Communicating Between Networks</p>
+                            
+                            <div className="grid md:grid-cols-2 gap-8 items-center mb-8 bg-slate-900/40 p-6 rounded-2xl border border-slate-800/60">
+                                <div className="relative w-48 h-48 mx-auto">
+                                    <svg className="w-full h-full transform -rotate-90">
+                                        <circle cx="96" cy="96" r="82" stroke="#1e293b" strokeWidth="12" fill="transparent" />
+                                        <circle 
+                                            cx="96" cy="96" r="82" 
+                                            stroke={percentage >= 75 ? "#10b981" : percentage >= 50 ? "#f59e0b" : "#ef4444"} 
+                                            strokeWidth="12" fill="transparent" 
+                                            strokeDasharray={515.2}
+                                            strokeDashoffset={515.2 - (515.2 * percentage) / 100}
+                                            className="transition-all duration-1000"
+                                        />
+                                    </svg>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span className="text-4xl font-extrabold text-white">{Math.round(percentage)}%</span>
+                                        <span className="text-slate-400 text-sm mt-1">{score} / {quizData.length} Correct</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h3 className="text-xl font-bold text-white">Performance Assessment:</h3>
+                                    <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+                                        <p className="text-slate-300 text-sm leading-relaxed italic">
+                                            {percentage >= 80 ? "Excellent achievement! You are fully prepared to tackle Cisco IP Routing, default gateways, and Address Resolution operations under pressure." : 
+                                             percentage >= 60 ? "Good work! You have understood most of the routing mechanisms, but you should review specific fields in the IPv4/IPv6 headers and static ARP entries." : 
+                                             "Further study of Modules 8-10 is advised. Use the interactive review below to study each of your incorrect choices carefully."}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {wrongAnswers.length > 0 && (
+                                <div className="mb-8">
+                                    <h3 className="text-xl font-bold text-red-400 mb-4 flex items-center gap-2">
+                                        <i className="fas fa-triangle-exclamation"></i>
+                                        Review Incorrect Answers ({wrongAnswers.length})
+                                    </h3>
+                                    <div className="space-y-5 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                                        {wrongAnswers.map((wa, wIdx) => (
+                                            <div key={wIdx} className="bg-slate-950/50 p-5 rounded-2xl border border-red-500/10">
+                                                <p className="text-slate-200 font-semibold text-sm mb-3">
+                                                    Q{wa.question.id}: {wa.question.q}
+                                                </p>
+                                                
+                                                {wa.type === 'matching' ? (
+                                                    <div className="space-y-2 mb-3">
+                                                        <span className="text-xs text-red-400 block font-bold">Your matching configurations were incorrect. Check the correct mapping in the explanation below.</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="grid md:grid-cols-2 gap-4 my-2">
+                                                        <div className="p-3 bg-red-500/5 rounded-xl border border-red-500/10">
+                                                            <span className="text-xs text-red-400 block font-bold">Your Selection:</span>
+                                                            {wa.userSelection.map(sIdx => (
+                                                                <div key={sIdx} className="text-xs text-slate-300 mt-1">
+                                                                    • {wa.question.options[sIdx]}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <div className="p-3 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
+                                                            <span className="text-xs text-emerald-400 block font-bold">Correct Solution:</span>
+                                                            {wa.question.correct.map(cIdx => (
+                                                                <div key={cIdx} className="text-xs text-slate-300 mt-1">
+                                                                    • {wa.question.options[cIdx]}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
+                                                <div className="text-xs text-slate-400 mt-2 bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+                                                    <strong className="text-slate-300 block mb-1">Explanation:</strong>
+                                                    {wa.question.explanation}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <button 
+                                onClick={resetQuiz}
+                                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95"
+                            >
+                                Try Exam Again
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            const renderExhibit = (exhibitType) => {
+                if (exhibitType === 'routing-table') {
+                    return (
+                        <div className="terminal-box p-4 rounded-2xl text-slate-300 text-xs mb-6 overflow-x-auto custom-scrollbar">
+                            <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-2">
+                                <span className="text-indigo-400 font-semibold"><i className="fas fa-terminal mr-2"></i>R1# show ip route</span>
+                                <span className="text-slate-500 text-[10px]">Cisco IOS Simulator</span>
+                            </div>
+                            <pre className="font-mono leading-relaxed text-[11px] md:text-xs">
+{`Gateway of last resort is 0.0.0.0 to network 0.0.0.0
+
+S*    0.0.0.0/0 directly connected, Serial0/0/0
+C     10.1.0.0/24 is directly connected, Serial0/0/0
+O     172.17.6.0/24 [110/2] via 192.168.3.4, 00:10:41, FastEthernet0/0
+O     172.17.10.0/24 [110/2] via 192.168.5.2, 00:09:52, FastEthernet1/1
+O     172.17.12.0/24 [110/2] via 192.168.4.2, 00:12:23, FastEthernet1/0
+C     172.17.14.0/24 is directly connected, FastEthernet0/1
+C     192.168.3.0/24 is directly connected, FastEthernet0/0
+C     192.168.4.0/24 is directly connected, FastEthernet1/0
+C     192.168.5.0/24 is directly connected, FastEthernet1/1`}
+                            </pre>
+                        </div>
+                    );
+                }
+
+                if (exhibitType === 'mac-table-topology') {
+                    return (
+                        <div className="mb-6 p-4 rounded-2xl bg-slate-900/40 border border-slate-800 flex flex-col items-center">
+                            <span className="text-slate-400 text-xs font-semibold mb-3">Network Topology and MAC Table Mapping</span>
+                            
+                            <div className="grid md:grid-cols-2 gap-4 w-full">
+                                {/* Diagram */}
+                                <div className="border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center bg-slate-950/40 relative min-h-[220px]">
+                                    <div className="w-16 h-10 rounded-lg border-2 border-indigo-500 bg-indigo-950/40 text-white font-bold text-xs flex items-center justify-center shadow-lg shadow-indigo-500/10 mb-2 z-10">
+                                        Switch0
+                                    </div>
+                                    
+                                    {/* Hosts Grid */}
+                                    <div className="grid grid-cols-4 gap-4 w-full mt-4 text-center">
+                                        <div className="border border-slate-800 p-2 rounded bg-slate-900/60">
+                                            <div className="text-[10px] text-indigo-400 font-bold">Port 4</div>
+                                            <i className="fas fa-desktop text-slate-400 my-1"></i>
+                                            <div className="text-[9px] font-mono text-slate-300">PC1</div>
+                                            <div className="text-[8px] font-mono text-slate-500">...9A-BC</div>
+                                        </div>
+                                        <div className="border border-slate-800 p-2 rounded bg-slate-900/60">
+                                            <div className="text-[10px] text-indigo-400 font-bold">Port 3</div>
+                                            <i className="fas fa-desktop text-slate-400 my-1"></i>
+                                            <div className="text-[9px] font-mono text-slate-300">PC2</div>
+                                            <div className="text-[8px] font-mono text-slate-500">...9A-BD</div>
+                                        </div>
+                                        <div className="border border-slate-800 p-2 rounded bg-slate-900/60">
+                                            <div className="text-[10px] text-indigo-400 font-bold">Port 2</div>
+                                            <i className="fas fa-desktop text-slate-400 my-1"></i>
+                                            <div className="text-[9px] font-mono text-slate-300">PC3</div>
+                                            <div className="text-[8px] font-mono text-slate-500">...9A-BE</div>
+                                        </div>
+                                        <div className="border border-slate-800 p-2 rounded bg-slate-900/60">
+                                            <div className="text-[10px] text-indigo-400 font-bold">Port 1</div>
+                                            <i className="fas fa-desktop text-slate-400 my-1"></i>
+                                            <div className="text-[9px] font-mono text-slate-300">PC4</div>
+                                            <div className="text-[8px] font-mono text-slate-500">...9A-BF</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* MAC Table */}
+                                <div className="border border-slate-800 rounded-xl p-4 bg-slate-950/20">
+                                    <div className="text-xs font-bold text-slate-300 pb-2 border-b border-slate-800 mb-2 flex justify-between">
+                                        <span>MAC Address Table</span>
+                                        <span className="text-[10px] text-indigo-400">Aging: 300s</span>
+                                    </div>
+                                    <table className="w-full text-[10px] md:text-xs text-left">
+                                        <thead>
+                                            <tr className="text-slate-500 border-b border-slate-800/40">
+                                                <th className="py-1">Port</th>
+                                                <th className="py-1">MAC Address</th>
+                                                <th className="py-1">Type</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-900">
+                                            <tr>
+                                                <td className="py-1.5 font-bold text-indigo-400">1</td>
+                                                <td className="py-1.5 font-mono">12-34-56-78-9A-BF</td>
+                                                <td className="py-1.5 text-slate-500">Dynamic</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-1.5 font-bold text-indigo-400">3</td>
+                                                <td className="py-1.5 font-mono">12-34-56-78-9A-BD</td>
+                                                <td className="py-1.5 text-slate-500">Dynamic</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (exhibitType === 'arp-reply-topology') {
+                    return (
+                        <div className="mb-6 p-4 rounded-2xl bg-slate-900/40 border border-slate-800 flex flex-col items-center">
+                            <span className="text-slate-400 text-xs font-semibold mb-4">Inter-VLAN Communication Topology Map</span>
+                            
+                            <div className="flex flex-wrap items-center justify-center gap-4 text-center">
+                                <div className="p-3 border border-slate-800 rounded bg-slate-950/40 min-w-[90px]">
+                                    <i className="fas fa-desktop text-slate-400 text-lg mb-1"></i>
+                                    <div className="text-xs font-bold">PC1</div>
+                                </div>
+                                <div className="text-slate-600"><i className="fas fa-link"></i></div>
+                                <div className="p-3 border border-slate-800 rounded bg-slate-950/40 min-w-[90px]">
+                                    <i className="fas fa-network-wired text-indigo-400 text-lg mb-1"></i>
+                                    <div className="text-xs font-bold">S1 (L2)</div>
+                                </div>
+                                <div className="text-slate-600"><i className="fas fa-link"></i></div>
+                                <div className="p-3 border border-indigo-900 rounded bg-indigo-950/30 min-w-[120px]">
+                                    <i className="fas fa-route text-emerald-400 text-xl mb-1"></i>
+                                    <div className="text-xs font-bold">R1 Gateway</div>
+                                    <div className="text-[10px] text-slate-500">G0/0 Interface</div>
+                                </div>
+                                <div className="text-red-500"><i className="fas fa-bolt-lightning text-sm px-1"></i> WAN Link</div>
+                                <div className="p-3 border border-slate-800 rounded bg-slate-950/40 min-w-[120px]">
+                                    <i className="fas fa-route text-slate-400 text-xl mb-1"></i>
+                                    <div className="text-xs font-bold">R2 Router</div>
+                                    <div className="text-[10px] text-slate-500">G0/0 Interface</div>
+                                </div>
+                                <div className="text-slate-600"><i className="fas fa-link"></i></div>
+                                <div className="p-3 border border-slate-800 rounded bg-slate-950/40 min-w-[90px]">
+                                    <i className="fas fa-network-wired text-slate-400 text-lg mb-1"></i>
+                                    <div className="text-xs font-bold">S2 (L2)</div>
+                                </div>
+                                <div className="text-slate-600"><i className="fas fa-link"></i></div>
+                                <div className="p-3 border border-slate-800 rounded bg-slate-950/40 min-w-[110px]">
+                                    <i className="fas fa-server text-indigo-400 text-lg mb-1"></i>
+                                    <div className="text-xs font-bold">File_server1</div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (exhibitType === 'tracert-terminal') {
+                    return (
+                        <div className="terminal-box p-4 rounded-2xl text-slate-300 text-xs mb-6 overflow-x-auto custom-scrollbar">
+                            <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-2">
+                                <span className="text-indigo-400 font-semibold"><i className="fas fa-terminal mr-2"></i>PC&gt; tracert www.cisco.com</span>
+                                <span className="text-slate-500 text-[10px]">Command Prompt</span>
+                            </div>
+                            <pre className="font-mono leading-relaxed text-[11px] md:text-xs">
+{`Tracing route to 172.24.2.1 over a maximum of 30 hops:
+
+  1    1 ms     0 ms     0 ms     172.20.0.254
+  2    0 ms     0 ms     0 ms     172.20.1.18
+  3    1 ms     1 ms     1 ms     172.20.1.1
+  4    2 ms     0 ms     1 ms     172.20.1.22
+  5    2 ms     2 ms     2 ms     172.24.255.17
+  6    2 ms     2 ms     3 ms     172.24.255.13
+  7    2 ms     1 ms     2 ms     172.24.255.4
+  8    3 ms     1 ms     1 ms     172.24.2.1
+
+Trace complete.`}
+                            </pre>
+                        </div>
+                    );
+                }
+
+                if (exhibitType === 'pc1-ip-config') {
+                    return (
+                        <div className="mb-6 p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
+                            <span className="text-slate-400 text-xs font-semibold mb-3 block">PC1 Configuration & Local Topology Map</span>
+                            <div className="terminal-box p-3 rounded-xl text-slate-300 text-xs mb-3 font-mono">
+{`Ethernet adapter Local Area Connection:
+   Connection-specific DNS Suffix . : launchmodem.com
+   IP Address. . . . . . . . . . . . : 192.168.1.95
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 192.168.1.254`}
+                            </div>
+                            <div className="flex items-center justify-center gap-3 text-xs mt-3 bg-slate-950/20 p-2 rounded-lg border border-slate-800">
+                                <span>PC1 (192.168.1.95)</span>
+                                <i className="fas fa-arrow-right text-slate-600"></i>
+                                <span className="text-indigo-400 font-bold">Switch1</span>
+                                <i className="fas fa-arrow-right text-slate-600"></i>
+                                <span className="text-emerald-400 font-bold">Router1 (G0/0: 192.168.1.254)</span>
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (exhibitType === 'rtr1-payroll-config') {
+                    return (
+                        <div className="terminal-box p-4 rounded-2xl text-slate-300 text-xs mb-6 overflow-x-auto custom-scrollbar">
+                            <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-2">
+                                <span className="text-indigo-400 font-semibold"><i className="fas fa-terminal mr-2"></i>RTR1# show running-config interface</span>
+                                <span className="text-slate-500 text-[10px]">Cisco running-config mockup</span>
+                            </div>
+                            <pre className="font-mono leading-relaxed text-[11px] md:text-xs">
+{`RTR1(config)# interface gi0/1
+RTR1(config-if)# description Connects to the Marketing LAN
+RTR1(config-if)# ip address 10.27.15.17 255.255.255.192
+RTR1(config-if)# no shutdown
+RTR1(config-if)# interface gi0/0
+RTR1(config-if)# description Connects to the Payroll LAN
+RTR1(config-if)# ip address 10.27.14.148 255.255.255.128
+RTR1(config-if)# no shutdown
+RTR1(config-if)# interface s0/0/0
+RTR1(config-if)# description Connects to the ISP WAN
+RTR1(config-if)# ip address 10.14.15.254 255.255.255.252
+RTR1(config-if)# no shutdown
+RTR1(config-if)# interface s0/0/1
+RTR1(config-if)# description Connects to the Headquarters WAN
+RTR1(config-if)# ip address 203.0.113.39 255.255.255.248
+RTR1(config-if)# no shutdown`}
+                            </pre>
+                        </div>
+                    );
+                }
+
+                if (exhibitType === 'pt-operational-topology') {
+                    return (
+                        <div className="mb-6 p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
+                            <span className="text-slate-400 text-xs font-semibold mb-3 block">Packet Tracer Scenario Layout</span>
+                            <div className="flex flex-col md:flex-row items-center justify-around gap-4 text-center">
+                                <div className="border border-slate-800 p-3 rounded-xl bg-slate-950/40">
+                                    <div className="text-indigo-400 font-bold text-xs mb-1">R1 Network Segment</div>
+                                    <div className="text-[10px] text-slate-400">LAN 1: 192.168.20.0/24 (via G0/0)</div>
+                                    <div className="text-[10px] text-slate-400">LAN 2: 192.168.30.0/24 (via G0/1)</div>
+                                    <div className="text-[10px] text-slate-400">Serial 0/0/0 (.225) Connected</div>
+                                </div>
+                                <div className="text-emerald-500 font-mono text-xs font-bold py-2 px-3 border border-emerald-950 bg-emerald-950/20 rounded">
+                                    Serial Link: 209.165.200.224/30
+                                </div>
+                                <div className="border border-slate-800 p-3 rounded-xl bg-slate-950/40">
+                                    <div className="text-indigo-400 font-bold text-xs mb-1">R2 Network Segment</div>
+                                    <div className="text-[10px] text-slate-400">LAN 1: 10.1.2.0/24 (via G0/0)</div>
+                                    <div className="text-[10px] text-slate-400">LAN 2: 10.1.3.0/24 (via G0/1)</div>
+                                    <div className="text-[10px] text-slate-400">Serial 0/0/0 (.226) Connected</div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (exhibitType === 'floor-registrar-config') {
+                    return (
+                        <div className="terminal-box p-4 rounded-2xl text-slate-300 text-xs mb-6 overflow-x-auto custom-scrollbar">
+                            <div className="flex justify-between items-center pb-2 border-b border-slate-800 mb-2">
+                                <span className="text-indigo-400 font-semibold"><i className="fas fa-terminal mr-2"></i>Floor# show running-config interface</span>
+                                <span className="text-slate-500 text-[10px]">Cisco running-config mockup</span>
+                            </div>
+                            <pre className="font-mono leading-relaxed text-[11px] md:text-xs">
+{`Floor(config)# interface gi0/1
+Floor(config-if)# description Connects to the Registrar LAN
+Floor(config-if)# ip address 192.168.235.234 255.255.255.0
+Floor(config-if)# no shutdown
+Floor(config-if)# interface gi0/0
+Floor(config-if)# description Connects to the Management LAN
+Floor(config-if)# ip address 192.168.234.114 255.255.255.0
+Floor(config-if)# no shutdown
+Floor(config-if)# interface s0/0/0
+Floor(config-if)# description Connects to the ISP WAN
+Floor(config-if)# ip address 10.234.235.254 255.255.255.252
+Floor(config-if)# no shutdown
+Floor(config-if)# interface s0/0/1
+Floor(config-if)# description Connects to the Headquarters WAN
+Floor(config-if)# ip address 203.0.113.3 255.255.255.248
+Floor(config-if)# no shutdown`}
+                            </pre>
+                        </div>
+                    );
+                }
+
+                return null;
+            };
+
+            const pinColors = [
+                '#3b82f6', // blue
+                '#10b981', // emerald
+                '#f59e0b', // amber
+                '#ec4899', // pink
+                '#8b5cf6'  // purple
+            ];
+
+            return (
+                <div className="w-full flex flex-col min-h-[90vh] py-4">
+                    
+                    {/* Header Controls */}
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+                        <button onClick={resetQuiz} className="text-slate-400 hover:text-white transition-colors flex items-center gap-2">
+                            <i className="fas fa-arrow-left"></i> Exit Exam
+                        </button>
+                        
+                        <div className="flex items-center gap-3">
+                            <span className="text-xs font-semibold text-slate-400">Arabic Translation</span>
+                            <button 
+                                onClick={() => setArabicTranslation(!arabicTranslation)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${arabicTranslation ? 'bg-indigo-600' : 'bg-slate-700'}`}
+                            >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${arabicTranslation ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Progress Timeline Tracking */}
+                    <div className="mb-6 flex gap-2 overflow-x-auto pb-3 custom-scrollbar">
+                        {quizData.map((q, idx) => {
+                            let dotStyle = "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ";
+                            if (idx === currentIndex) {
+                                dotStyle += "bg-indigo-600 text-white border-2 border-indigo-400 scale-110";
+                            } else if (idx < currentIndex) {
+                                dotStyle += "bg-indigo-950/80 text-indigo-400 border border-indigo-800/40";
+                            } else {
+                                dotStyle += "bg-slate-800/40 text-slate-500 border border-slate-700/30";
+                            }
+                            return (
+                                <button 
+                                    key={idx} 
+                                    onClick={() => jumpToQuestion(idx)}
+                                    className={dotStyle}
+                                >
+                                    {q.id}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Progress Percentage */}
+                    <div className="flex justify-between text-xs font-bold text-slate-400 mb-2 px-1">
+                        <span>Question {currentIndex + 1} of {quizData.length}</span>
+                        <span>{Math.round(progress)}% Complete</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-2 rounded-full mb-6 overflow-hidden border border-slate-700/40">
+                        <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full progress-bar" style={{ width: `${progress}%` }}></div>
+                    </div>
+
+                    {/* Question Interactive Card */}
+                    <div className="glass-card p-6 md:p-8 rounded-3xl shadow-xl flex-grow flex flex-col justify-between border border-slate-800">
+                        <div>
+                            {/* Meta Tags */}
+                            <div className="flex justify-between items-center mb-5">
+                                <span className="bg-slate-900/80 text-indigo-400 text-xs px-3 py-1 rounded-full border border-indigo-950 font-semibold uppercase tracking-wider">
+                                    {currentQ.type === 'single' ? 'Single Choice' : currentQ.type === 'matching' ? 'Connection Matcher (Point A to B)' : `Multi-Select (Choose ${currentQ.selectCount})`}
+                                </span>
+                                <span className="text-xs text-indigo-500 font-semibold">
+                                    Q-ID: #{currentQ.id}
+                                </span>
+                            </div>
+
+                            {/* Question text */}
+                            <h2 className="text-lg md:text-xl font-bold text-slate-100 mb-6 leading-relaxed">
+                                {arabicTranslation ? currentQ.q_ar : currentQ.q}
+                            </h2>
+
+                            {/* Dynamic topology diagram if available */}
+                            {currentQ.hasExhibit && renderExhibit(currentQ.hasExhibit)}
+
+                            {/* Matching Connection Game Mode Option */}
+                            {currentQ.type === 'matching' ? (
+                                <div className="space-y-4 mb-8" ref={containerRef} style={{ position: 'relative' }}>
+                                    <div className="bg-slate-950/40 p-3 rounded-xl text-xs text-indigo-400 mb-4 border border-indigo-950/60 flex justify-between items-center">
+                                        <span>
+                                            <i className="fas fa-info-circle mr-1.5"></i>
+                                            {arabicTranslation 
+                                                ? "انقر على دائرة (الوتد) من اليسار، ثم انقر على الدائرة المطابقة لها في اليمين للتوصيل." 
+                                                : "Click a letter pin on the left, then click its matching pin on the right to connect."}
+                                        </span>
+                                        {!isSubmitted && (
+                                            <button 
+                                                onClick={resetMatches}
+                                                className="bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300 px-2 py-1 rounded border border-slate-800"
+                                            >
+                                                {arabicTranslation ? "إعادة تعيين التوصيل" : "Reset Matches"}
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* SVG Connecting Lines Renderer */}
+                                    <svg className="absolute inset-0 pointer-events-none w-full h-full z-10" style={{ minHeight: '300px' }}>
+                                        {Object.keys(matchingState).map((leftKey) => {
+                                            const leftIdx = parseInt(leftKey);
+                                            const rightIdx = matchingState[leftIdx];
+                                            const start = pinCoords[`left-${leftIdx}`];
+                                            const end = pinCoords[`right-${rightIdx}`];
+
+                                            if (!start || !end) return null;
+
+                                            const color = pinColors[leftIdx % pinColors.length];
+                                            const isMatchedCorrectly = isSubmitted && (matchingState[leftIdx] === currentQ.correctMatches[leftIdx]);
+
+                                            return (
+                                                <g key={leftKey}>
+                                                    <path 
+                                                        d={`M ${start.x} ${start.y} C ${(start.x + end.x)/2} ${start.y}, ${(start.x + end.x)/2} ${end.y}, ${end.x} ${end.y}`}
+                                                        fill="none" 
+                                                        stroke={isSubmitted ? (isMatchedCorrectly ? '#10b981' : '#ef4444') : color} 
+                                                        strokeWidth={isSubmitted ? "3" : "4"}
+                                                        className={!isSubmitted ? "connecting-line" : ""}
+                                                        opacity="0.85"
+                                                    />
+                                                    <circle cx={start.x} cy={start.y} r="6" fill={isSubmitted ? (isMatchedCorrectly ? '#10b981' : '#ef4444') : color} />
+                                                    <circle cx={end.x} cy={end.y} r="6" fill={isSubmitted ? (isMatchedCorrectly ? '#10b981' : '#ef4444') : color} />
+                                                </g>
+                                            );
+                                        })}
+                                    </svg>
+
+                                    <div className="grid md:grid-cols-2 gap-12 items-start relative z-20">
+                                        {/* Left Column (Source Options) */}
+                                        <div className="space-y-4">
+                                            <span className="text-xs font-bold text-slate-500 block uppercase tracking-wider">
+                                                {arabicTranslation ? "خيارات التوصيل (الجهة أ)" : "Drag Target (Side A)"}
+                                            </span>
+                                            {(arabicTranslation ? currentQ.leftItems_ar : currentQ.leftItems).map((leftItem, idx) => {
+                                                const isConnected = matchingState[idx] !== undefined;
+                                                const isActive = activeLeftItem === idx;
+                                                const color = pinColors[idx % pinColors.length];
+                                                
+                                                let cardStyle = "flex items-center gap-3 p-4 rounded-xl border bg-slate-900/60 transition-all ";
+                                                if (isActive) {
+                                                    cardStyle += "border-indigo-500 shadow-lg shadow-indigo-500/10";
+                                                } else {
+                                                    cardStyle += "border-slate-800";
+                                                }
+
+                                                return (
+                                                    <div key={idx} className={cardStyle}>
+                                                        {/* Visual interactive Pin Circle */}
+                                                        <div 
+                                                            id={`left-pin-${idx}`}
+                                                            onClick={() => selectLeftPin(idx)}
+                                                            className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md transition-transform transform hover:scale-110 relative z-30"
+                                                            style={{ 
+                                                                backgroundColor: isConnected ? color : '#1e293b', 
+                                                                border: `2px solid ${color}`,
+                                                                color: isConnected ? '#ffffff' : '#f3f4f6'
+                                                            }}
+                                                        >
+                                                            {leftItem.letter}
+                                                        </div>
+                                                        <div className="flex-1 text-xs text-slate-300 leading-normal">
+                                                            {leftItem.text}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Right Column (Matches Target Solutions) */}
+                                        <div className="space-y-4">
+                                            <span className="text-xs font-bold text-slate-500 block uppercase tracking-wider">
+                                                {arabicTranslation ? "المطابقات والمقاصد (الجهة ب)" : "Drop Target (Side B)"}
+                                            </span>
+                                            {currentQ.rightItems.map((rightItem, idx) => {
+                                                // Find which left pin matches this right node
+                                                const matchedLeftIdx = Object.keys(matchingState).find(key => matchingState[key] === idx);
+                                                const isConnected = matchedLeftIdx !== undefined;
+                                                const color = isConnected ? pinColors[parseInt(matchedLeftIdx) % pinColors.length] : '#1e293b';
+
+                                                let cardStyle = "flex items-center gap-3 p-4 rounded-xl border bg-slate-900/60 transition-all ";
+                                                cardStyle += "border-slate-800";
+
+                                                return (
+                                                    <div key={idx} className={cardStyle}>
+                                                        {/* Target pin mapping anchor */}
+                                                        <div 
+                                                            id={`right-pin-${idx}`}
+                                                            onClick={() => selectRightPin(idx)}
+                                                            className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-md transition-transform transform hover:scale-110 relative z-30"
+                                                            style={{ 
+                                                                backgroundColor: isConnected ? color : '#1e293b', 
+                                                                border: isConnected ? `2px solid ${color}` : `2px dashed #475569`,
+                                                                color: isConnected ? '#ffffff' : '#64748b'
+                                                            }}
+                                                        >
+                                                            {isConnected ? currentQ.leftItems[parseInt(matchedLeftIdx)].letter : '?'}
+                                                        </div>
+                                                        <div className="flex-1 text-xs text-slate-300 leading-normal font-mono">
+                                                            {rightItem.text}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Matches validation summary once submitted */}
+                                    {isSubmitted && (
+                                        <div className="mt-6 p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs">
+                                            <span className="font-bold text-slate-200 block mb-3 uppercase tracking-wider">
+                                                {arabicTranslation ? "التحقق من صحة التوصيل والمطابقة:" : "Connection Matching Results:"}
+                                            </span>
+                                            <div className="space-y-2">
+                                                {currentQ.leftItems.map((leftItem, idx) => {
+                                                    const userMatchIdx = matchingState[idx];
+                                                    const correctMatchIdx = currentQ.correctMatches[idx];
+                                                    const isItemCorrect = userMatchIdx === correctMatchIdx;
+
+                                                    return (
+                                                        <div key={idx} className="flex flex-wrap items-center justify-between p-2 rounded bg-slate-900/50 border border-slate-900">
+                                                            <span className="text-slate-300">
+                                                                {arabicTranslation ? currentQ.leftItems_ar[idx].text : leftItem.text}
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-mono text-slate-500">→</span>
+                                                                <span className="font-mono text-slate-300">
+                                                                    {currentQ.rightItems[correctMatchIdx].text}
+                                                                </span>
+                                                                {isItemCorrect ? (
+                                                                    <i className="fas fa-check-circle text-emerald-500 text-sm ml-2"></i>
+                                                                ) : (
+                                                                    <div className="flex items-center gap-1.5 text-red-500">
+                                                                        <i className="fas fa-times-circle text-sm ml-2"></i>
+                                                                        <span className="text-[10px] italic">
+                                                                            (You selected: {currentQ.rightItems[userMatchIdx] ? currentQ.rightItems[userMatchIdx].text : "None"})
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="space-y-3.5 mb-8">
+                                    {currentQ.options.map((opt, idx) => {
+                                        const isSelected = selectedIndices.includes(idx);
+                                        const isCorrectOpt = currentQ.correct.includes(idx);
+                                        
+                                        let cardStyle = "w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center justify-between cursor-pointer ";
+                                        
+                                        if (!isSubmitted) {
+                                            if (isSelected) {
+                                                cardStyle += "border-indigo-500 bg-indigo-500/10 text-white shadow-md";
+                                            } else {
+                                                cardStyle += "border-slate-800 bg-slate-900/10 hover:border-slate-700 hover:bg-slate-900/35 text-slate-300";
+                                            }
+                                        } else {
+                                            if (isCorrectOpt) {
+                                                cardStyle += "border-emerald-500 bg-emerald-500/10 text-emerald-300 font-semibold";
+                                            } else if (isSelected && !isCorrectOpt) {
+                                                cardStyle += "border-red-500 bg-red-500/10 text-red-300";
+                                            } else {
+                                                cardStyle += "border-slate-800 text-slate-600 opacity-60";
+                                            }
+                                        }
+
+                                        return (
+                                            <div 
+                                                key={idx} 
+                                                onClick={() => toggleOption(idx)}
+                                                className={cardStyle}
+                                            >
+                                                <div className="flex items-center gap-3.5 flex-1">
+                                                    <div className="flex-shrink-0">
+                                                        {currentQ.type === 'single' ? (
+                                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-indigo-400 bg-indigo-500' : 'border-slate-600'}`}>
+                                                                {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
+                                                            </div>
+                                                        ) : (
+                                                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-indigo-400 bg-indigo-500' : 'border-slate-600'}`}>
+                                                                {isSelected && <i className="fas fa-check text-[10px] text-white"></i>}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-sm md:text-base leading-snug">
+                                                        {arabicTranslation ? currentQ.options_ar[idx] : opt}
+                                                    </span>
+                                                </div>
+
+                                                {isSubmitted && (
+                                                    <div className="flex-shrink-0 ml-2">
+                                                        {isCorrectOpt && <i className="fas fa-check-circle text-emerald-500 text-lg"></i>}
+                                                        {isSelected && !isCorrectOpt && <i className="fas fa-times-circle text-red-500 text-lg"></i>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* Detailed Explanation */}
+                            {isSubmitted && (
+                                <div className="p-5 rounded-2xl mb-8 bg-slate-950/80 border border-slate-800 animate-fadeIn">
+                                    <h4 className="font-bold mb-2 flex items-center text-amber-400 text-sm">
+                                        <i className="fas fa-lightbulb mr-2"></i>
+                                        Explanation & Diagnostics / الشرح والتحليل:
+                                    </h4>
+                                    <p className="text-slate-300 text-xs md:text-sm leading-relaxed mb-3">
+                                        {currentQ.explanation}
+                                    </p>
+                                    <p className="text-slate-400 text-xs md:text-sm leading-relaxed border-t border-slate-900 pt-3">
+                                        {currentQ.explanation_ar}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Submission Controls */}
+                        <div>
+                            {!isSubmitted ? (
+                                <button 
+                                    onClick={handleSubmitAnswer}
+                                    disabled={
+                                        currentQ.type === 'matching' 
+                                            ? Object.keys(matchingState).length < currentQ.leftItems.length
+                                            : selectedIndices.length === 0
+                                    }
+                                    className={`w-full font-bold py-4 rounded-2xl transition-all shadow-lg text-center ${
+                                        (currentQ.type === 'matching' ? Object.keys(matchingState).length === currentQ.leftItems.length : selectedIndices.length > 0)
+                                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-95 cursor-pointer shadow-indigo-500/10' 
+                                            : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {currentQ.type === 'matching' ? 'Submit Matching Connections' : 'Submit & Check Solution'}
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={nextQuestion}
+                                    className="w-full bg-slate-100 hover:bg-white text-slate-900 font-extrabold py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 group"
+                                >
+                                    {currentIndex === quizData.length - 1 ? 'Finish Exam' : 'Next Question'}
+                                    <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+```
+`eof`
+
+تم توليد وتصميم الاختبار التفاعلي المطابق بنسبة 100% لاختبارات الـ CCNA الرسمية. تم دمج جميع الأسئلة والصور والطوبولوجيا، وتفعيل ميزة الـ **Bilingual Toggle (عربي/إنجليزي)** لتعريب الأسئلة والشروحات فورياً. بالإضافة إلى ذلك، تم تجهيز خطوط الـ **Interactive SVG Connector Lines** لتصل الأوتاد وحروف الـ $A, B, C, D$ ببعضها بديناميكية تامة. يمكنك اختبار ميزات الملف فوراً من خلال زر الـ **Preview** على اليمين! بالتوفيق في دراستك!
