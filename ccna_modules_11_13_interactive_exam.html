@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCNA Modules 11-13 IP Addressing Exam</title>
+    <!-- Load React, ReactDOM, Babel, Tailwind CSS and FontAwesome -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Tajawal', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;900&display=swap');
+        
+        body { 
+            font-family: 'Inter', 'Tajawal', sans-serif; 
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Dark Mode Styles */
+        .dark body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+        }
+        .dark .glass-card { 
+            background: rgba(30, 41, 59, 0.8); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .dark .terminal-box { background-color: #020617; border-color: #334155; color: #cbd5e1; }
+        .dark .option-card { background: rgba(15, 23, 42, 0.6); border-color: #334155; }
+        .dark .option-card:hover { background: rgba(30, 41, 59, 0.8); border-color: #475569; }
+        .dark .pin-unmatched { background-color: #1e293b; border-color: #475569; color: #94a3b8; }
+        .dark .match-target { background-color: rgba(15, 23, 42, 0.6); border-color: #334155; }
+
+        /* Light Mode Styles */
+        .light body {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e2e8f0 100%);
+            color: #0f172a;
+        }
+        .light .glass-card { 
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid rgba(255, 255, 255, 0.6); 
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+        }
+        .light .terminal-box { background-color: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+        .light .option-card { background: rgba(248, 250, 252, 0.8); border-color: #cbd5e1; }
+        .light .option-card:hover { background: rgba(241, 245, 249, 1); border-color: #94a3b8; }
+        .light .pin-unmatched { background-color: #f1f5f9; border-color: #cbd5e1; color: #64748b; }
+        .light .match-target { background-color: rgba(248, 250, 252, 0.8); border-color: #e2e8f0; }
+
+        /* Shared Styles */
+        .progress-bar { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(107, 114, 128, 0.8); }
+        
+        .terminal-box { font-family: 'Courier New', Courier, monospace; }
+        
+        @keyframes dash { to { stroke-dashoffset: -20; } }
+        .connecting-line { stroke-dasharray: 5; animation: dash 1s linear infinite; }
+        .matching-node { transition: all 0.2s ease-in-out; }
+    </style>
+</head>
+<body class="light p-3 md:p-6 flex flex-col justify-between min-h-screen">
+    <div id="root" class="w-full max-w-5xl mx-auto"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const quizData = [
+            {
+                id: 1,
+                type: "single",
+                q: "What is the prefix length notation for the subnet mask 255.255.255.224?",
+                q_ar: "ما هو تدوين طول البادئة (Prefix length) لقناع الشبكة الفرعية 255.255.255.224؟",
+                options: ["/25", "/26", "/27", "/28"],
+                options_ar: ["/25", "/26", "/27", "/28"],
+                correct: [2],
+                explanation: "The binary format for 255.255.255.224 is 11111111.11111111.11111111.11100000. The prefix length is the number of consecutive 1s in the subnet mask. Therefore, the prefix length is /27.",
+                explanation_ar: "الصيغة الثنائية للرقم 224 هي 11100000. بما أن الثلاث خانات الأولى (أوكتت) تحتوي على 24 بت من الوحدات (1s)، ونضيف إليها 3 بتات من الخانة الأخيرة، يصبح المجموع 27. لذا الطول هو /27."
+            },
+            {
+                id: 2,
+                type: "single",
+                q: "How many valid host addresses are available on an IPv4 subnet that is configured with a /26 mask?",
+                q_ar: "ما هو عدد عناوين المضيف (Hosts) الصالحة والمتاحة في شبكة IPv4 فرعية تمت تهيئتها بقناع /26؟",
+                options: ["254", "190", "192", "62", "64"],
+                options_ar: ["254", "190", "192", "62", "64"],
+                correct: [3],
+                explanation: "A /26 mask leaves 6 bits for the host portion (32 - 26 = 6). The formula for valid hosts is 2^n - 2. So, 2^6 - 2 = 64 - 2 = 62 valid host addresses.",
+                explanation_ar: "قناع /26 يترك 6 بتات لجزء المضيف (32 - 26 = 6). صيغة حساب المضيفين الصالحين هي (2 أس n) ناقص 2. إذن: 2^6 - 2 = 64 - 2 = 62 عنواناً صالحاً للمضيف."
+            },
+            {
+                id: 3,
+                type: "single",
+                q: "Which subnet mask would be used if 5 host bits are available?",
+                q_ar: "ما هو قناع الشبكة الفرعية (Subnet Mask) الذي سيتم استخدامه إذا كان هناك 5 بتات متاحة للمضيف (Host bits)؟",
+                options: ["255.255.255.0", "255.255.255.128", "255.255.255.224", "255.255.255.240"],
+                options_ar: ["255.255.255.0", "255.255.255.128", "255.255.255.224", "255.255.255.240"],
+                correct: [2],
+                explanation: "If 5 bits are for hosts, then 27 bits are for the network (32 - 5 = 27). A /27 prefix translates to a subnet mask of 255.255.255.224.",
+                explanation_ar: "إذا كان هناك 5 بتات للمضيفين، فهذا يعني أن هناك 27 بت للشبكة (32 - 5 = 27). البادئة /27 تترجم إلى القناع 255.255.255.224 (حيث الخانة الأخيرة هي 11100000)."
+            },
+            {
+                id: 4,
+                type: "single",
+                q: "A network administrator subnets the 192.168.10.0/24 network into subnets with /26 masks. How many equal-sized subnets are created?",
+                q_ar: "قام مسؤول شبكة بتقسيم الشبكة 192.168.10.0/24 إلى شبكات فرعية باستخدام قناع /26. ما هو عدد الشبكات الفرعية المتساوية الحجم التي تم إنشاؤها؟",
+                options: ["1", "2", "4", "8", "16", "64"],
+                options_ar: ["1", "2", "4", "8", "16", "64"],
+                correct: [2],
+                explanation: "Borrowing from a /24 to a /26 means borrowing 2 bits. The number of subnets created is 2^n, where n is bits borrowed. 2^2 = 4 subnets.",
+                explanation_ar: "الانتقال من /24 إلى /26 يعني استعارة 2 بت (26 - 24 = 2). عدد الشبكات الممكنة يُحسب بالصيغة (2 أس عدد البتات المستعارة). إذن 2^2 = 4 شبكات فرعية."
+            },
+            {
+                id: 5,
+                type: "matching",
+                q: "Match the subnetwork to a host address that would be included within the subnetwork.",
+                q_ar: "قم بمطابقة الشبكة الفرعية (Subnetwork) مع عنوان المضيف (Host Address) الصالح الذي يقع ضمن نطاقها.",
+                leftItems: [
+                    { text: "192.168.1.32 /27", letter: "A" },
+                    { text: "192.168.1.64 /27", letter: "B" },
+                    { text: "192.168.1.96 /27", letter: "C" }
+                ],
+                leftItems_ar: [
+                    { text: "الشبكة 192.168.1.32/27", letter: "A" },
+                    { text: "الشبكة 192.168.1.64/27", letter: "B" },
+                    { text: "الشبكة 192.168.1.96/27", letter: "C" }
+                ],
+                rightItems: [
+                    { text: "192.168.1.48" },
+                    { text: "192.168.1.68" },
+                    { text: "192.168.1.121" },
+                    { text: "192.168.1.128 (Invalid)" } // Distractor
+                ],
+                correctMatches: {
+                    0: 0, // .32/27 contains .48
+                    1: 1, // .64/27 contains .68
+                    2: 2  // .96/27 contains .121
+                },
+                explanation: "A /27 subnet increments by 32. Subnet .32 range is .33-.62 (matches .48). Subnet .64 range is .65-.94 (matches .68). Subnet .96 range is .97-.126 (matches .121).",
+                explanation_ar: "الشبكات بقناع /27 تزداد بمقدار 32. الشبكة .32 نطاقها (33 إلى 62) فتشمل 48. الشبكة .64 نطاقها (65 إلى 94) فتشمل 68. والشبكة .96 نطاقها (97 إلى 126) فتشمل 121."
+            },
+            {
+                id: 6,
+                type: "single",
+                q: "An administrator wants to create four subnetworks from the network address 192.168.1.0/24. What is the network address and subnet mask of the second useable subnet?",
+                q_ar: "يرغب مسؤول في إنشاء 4 شبكات فرعية من الشبكة 192.168.1.0/24. ما هو عنوان الشبكة وقناع الشبكة الفرعية للشبكة الثانية الصالحة للاستخدام؟",
+                options: [
+                    "subnetwork 192.168.1.64 | subnet mask 255.255.255.192",
+                    "subnetwork 192.168.1.32 | subnet mask 255.255.255.240",
+                    "subnetwork 192.168.1.64 | subnet mask 255.255.255.240",
+                    "subnetwork 192.168.1.128 | subnet mask 255.255.255.192",
+                    "subnetwork 192.168.1.8 | subnet mask 255.255.255.224"
+                ],
+                options_ar: [
+                    "الشبكة 192.168.1.64 | القناع 255.255.255.192",
+                    "الشبكة 192.168.1.32 | القناع 255.255.255.240",
+                    "الشبكة 192.168.1.64 | القناع 255.255.255.240",
+                    "الشبكة 192.168.1.128 | القناع 255.255.255.192",
+                    "الشبكة 192.168.1.8 | القناع 255.255.255.224"
+                ],
+                correct: [0],
+                explanation: "To get 4 subnets, borrow 2 bits (/26). Subnet mask is 255.255.255.192. The block size is 64. Subnets are: 1st=192.168.1.0, 2nd=192.168.1.64, 3rd=192.168.1.128, 4th=192.168.1.192.",
+                explanation_ar: "للحصول على 4 شبكات نحتاج استعارة 2 بت (/26)، القناع هو 255.255.255.192. القفزة بمقدار 64. الشبكة الأولى هي .0 والثانية هي .64."
+            },
+            {
+                id: 7,
+                type: "single",
+                q: "How many bits must be borrowed from the host portion of an address to accommodate a router with five connected networks?",
+                q_ar: "ما عدد البتات (bits) التي يجب استعارتها من جزء المضيف (host) لاستيعاب موجه (Router) يمتلك 5 شبكات متصلة به؟",
+                options: ["two", "three", "four", "five"],
+                options_ar: ["اثنان (2)", "ثلاثة (3)", "أربعة (4)", "خمسة (5)"],
+                correct: [1],
+                explanation: "To create at least 5 subnets, we use the formula 2^n. If n=2, we get 4 (not enough). If n=3, we get 8 (enough). So we must borrow 3 bits.",
+                explanation_ar: "نستخدم المعادلة 2^n. إذا استعرنا 2 بت سنحصل على 4 شبكات (غير كافية). إذا استعرنا 3 بت سنحصل على 8 شبكات وهو ما يلبي حاجة الـ 5 شبكات."
+            },
+            {
+                id: 8,
+                type: "matching",
+                q: "Match each IPv4 address to the appropriate address category.",
+                q_ar: "قم بمطابقة كل عنوان IPv4 بالفئة (Category) المناسبة له.",
+                leftItems: [
+                    { text: "192.168.100.161 /25", letter: "A" },
+                    { text: "192.168.1.191 /26", letter: "B" },
+                    { text: "10.10.10.128 /25", letter: "C" },
+                    { text: "172.110.12.64 /28", letter: "D" },
+                    { text: "10.0.0.159 /27", letter: "E" }
+                ],
+                leftItems_ar: [
+                    { text: "192.168.100.161 /25", letter: "A" },
+                    { text: "192.168.1.191 /26", letter: "B" },
+                    { text: "10.10.10.128 /25", letter: "C" },
+                    { text: "172.110.12.64 /28", letter: "D" },
+                    { text: "10.0.0.159 /27", letter: "E" }
+                ],
+                rightItems: [
+                    { text: "Host Address" },
+                    { text: "Broadcast Address" },
+                    { text: "Network Address" }
+                ],
+                correctMatches: {
+                    0: 0, // .161/25 is Host (Network is 128, Broadcast is 255)
+                    1: 1, // .191/26 is Broadcast (Network is 128, range 129-190)
+                    2: 2, // .128/25 is Network (block size 128)
+                    3: 2, // .64/28 is Network (block size 16)
+                    4: 1  // .159/27 is Broadcast (Network 128, range 129-158)
+                },
+                explanation: "Calculate boundaries: .161 is between .128 and .255 (Host). .191 is the end of .128/26 block (Broadcast). .128 is a boundary of /25 (Network). .64 is a boundary of /28 (Network). .159 is the end of .128/27 block (Broadcast).",
+                explanation_ar: "بحساب القفزات: .161 هو عنوان مضيف. .191 يمثل نهاية كتلة /26 فهو بث. .128 يمثل بداية كتلة /25 فهو شبكة. .64 بداية كتلة /28 فهو شبكة. .159 نهاية كتلة /27 فهو عنوان بث."
+            },
+            {
+                id: 9,
+                type: "multi",
+                selectCount: 3,
+                q: "What three blocks of addresses are defined by RFC 1918 for private network use? (Choose three.)",
+                q_ar: "ما هي كتل العناوين الثلاث التي حددتها وثيقة RFC 1918 للاستخدام في الشبكات الخاصة (Private Networks)؟ (اختر ثلاثة)",
+                options: [
+                    "10.0.0.0/8",
+                    "172.16.0.0/12",
+                    "192.168.0.0/16",
+                    "100.64.0.0/14",
+                    "169.254.0.0/16",
+                    "239.0.0.0/8"
+                ],
+                options_ar: [
+                    "10.0.0.0/8",
+                    "172.16.0.0/12",
+                    "192.168.0.0/16",
+                    "100.64.0.0/14",
+                    "169.254.0.0/16",
+                    "239.0.0.0/8"
+                ],
+                correct: [0, 1, 2],
+                explanation: "RFC 1918 defines three private IPv4 blocks: 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16. These are non-routable on the public internet.",
+                explanation_ar: "تُعرّف وثيقة RFC 1918 ثلاث نطاقات للعناوين الخاصة (Private IP) وهي: شبكة العشرات (10.0.0.0/8)، شبكة 172 (172.16.0.0/12)، وشبكة 192 (192.168.0.0/16)."
+            },
+            {
+                id: 10,
+                type: "single",
+                q: "Refer to the exhibit. An administrator must send a message to everyone on the router A network. What is the broadcast address for network 172.16.16.0/22?",
+                q_ar: "بالرجوع للمعطيات، يجب على المسؤول إرسال رسالة للجميع في شبكة الموجه A. ما هو عنوان البث الكلي (Broadcast) للشبكة 172.16.16.0/22؟",
+                hasExhibit: "network-172",
+                options: [
+                    "172.16.16.255",
+                    "172.16.20.255",
+                    "172.16.19.255",
+                    "172.16.23.255",
+                    "172.16.255.255"
+                ],
+                options_ar: [
+                    "172.16.16.255",
+                    "172.16.20.255",
+                    "172.16.19.255",
+                    "172.16.23.255",
+                    "172.16.255.255"
+                ],
+                correct: [2],
+                explanation: "A /22 mask means the 3rd octet increments by 4. So the next network is 172.16.20.0. The broadcast address is one less than the next network: 172.16.19.255.",
+                explanation_ar: "القناع /22 يعني أن القفزة في الخانة الثالثة مقدارها 4. الشبكة التالية هي 172.16.20.0. وبالتالي، عنوان البث للشبكة الحالية هو العنوان الذي يسبقها مباشرة: 172.16.19.255."
+            },
+            {
+                id: 11,
+                type: "single",
+                q: "A high school is using videoconferencing technology to establish student interactions with another high school in Russia. The network administrator configures the end device with the IP address 209.165.201.10. The administrator sends a request for the IP address for the end device in school B and the response is 192.168.25.10. Neither school is using a VPN. The administrator knows immediately that this IP will not work. Why?",
+                q_ar: "تقوم مدرسة باستخدام مؤتمرات الفيديو للاتصال بمدرسة أخرى. قام المسؤول بتكوين جهاز بعنوان عام 209.165.201.10. عند طلب عنوان جهاز المدرسة الأخرى، كان الرد أنه 192.168.25.10. لا تستخدم أي من المدرستين VPN. عرف المسؤول فوراً أن هذا لن ينجح. لماذا؟",
+                options: [
+                    "This is a loopback address.",
+                    "This is a link-local address.",
+                    "This is a private IP address.",
+                    "There is an IP address conflict."
+                ],
+                options_ar: [
+                    "هذا عنوان استرجاع (Loopback).",
+                    "هذا عنوان ارتباط محلي (Link-local).",
+                    "هذا عنوان IP خاص (Private IP).",
+                    "يوجد تعارض في عناوين الـ IP."
+                ],
+                correct: [2],
+                explanation: "192.168.25.10 is an RFC 1918 private IP address, which is not routable across the public Internet. Without a VPN or NAT mapping to a public IP, the connection will fail.",
+                explanation_ar: "العنوان 192.168.25.10 هو عنوان خاص (Private IP) ولا يمكن توجيهه عبر الإنترنت العام. بدون VPN أو NAT، سيفشل الاتصال بين المدرستين."
+            },
+            {
+                id: 12,
+                type: "multi",
+                selectCount: 3,
+                q: "Which three addresses are valid public addresses? (Choose three.)",
+                q_ar: "ما هي العناوين الثلاثة التي تُعتبر عناوين عامة (Public Addresses) صالحة؟ (اختر ثلاثة)",
+                options: [
+                    "198.133.219.17",
+                    "192.168.1.245",
+                    "10.15.250.5",
+                    "128.107.12.117",
+                    "172.31.1.25",
+                    "64.104.78.227"
+                ],
+                options_ar: [
+                    "198.133.219.17",
+                    "192.168.1.245 (خاص)",
+                    "10.15.250.5 (خاص)",
+                    "128.107.12.117",
+                    "172.31.1.25 (خاص)",
+                    "64.104.78.227"
+                ],
+                correct: [0, 3, 5],
+                explanation: "192.168.x.x, 10.x.x.x, and 172.16-31.x.x are private addresses. 198.133.219.17, 128.107.12.117, and 64.104.78.227 fall outside these ranges and are public.",
+                explanation_ar: "شبكات 10 و 172.16-31 و 192.168 هي عناوين خاصة. العناوين الأخرى في الخيارات تقع خارج هذه النطاقات وتعتبر عناوين عامة يمكن تصفحها عبر الإنترنت."
+            },
+            {
+                id: 13,
+                type: "single",
+                q: "Which of these addresses is the shortest abbreviation for the IPv6 address: 3FFE:1044:0000:0000:00AB:0000:0000:0057?",
+                q_ar: "أي من هذه العناوين يمثل أقصر اختصار صحيح لعنوان IPv6 المذكور: 3FFE:1044:0000:0000:00AB:0000:0000:0057؟",
+                options: [
+                    "3FFE:1044::AB::57",
+                    "3FFE:1044::00AB::0057",
+                    "3FFE:1044:0:0:AB::57",
+                    "3FFE:1044:0:0:00AB::0057"
+                ],
+                options_ar: [
+                    "3FFE:1044::AB::57",
+                    "3FFE:1044::00AB::0057",
+                    "3FFE:1044:0:0:AB::57",
+                    "3FFE:1044:0:0:00AB::0057"
+                ],
+                correct: [2],
+                explanation: "Rules: 1) Omit leading zeros (00AB -> AB, 0057 -> 57). 2) Use '::' for the *longest* sequence of zeros. The longest is at the end (0000:0000 -> ::). The first zero sequence becomes 0:0. Hence: 3FFE:1044:0:0:AB::57. Note: '::' can only be used once.",
+                explanation_ar: "القواعد: حذف الأصفار البادئة، واستخدام (::) مرة واحدة فقط لأطول سلسلة أصفار. نضع (::) للأصفار قبل 57، ونترك 0:0 للأصفار الأخرى."
+            },
+            {
+                id: 14,
+                type: "single",
+                q: "A network administrator has received the IPv6 prefix 2001:DB8::/48 for subnetting. Assuming the administrator does not subnet into the interface ID portion of the address space, how many subnets can the administrator create from the /48 prefix?",
+                q_ar: "تلقى مسؤول شبكة البادئة 2001:DB8::/48 للتقسيم. بافتراض أنه لن يستخدم جزء معرّف الواجهة (Interface ID)، كم عدد الشبكات الفرعية التي يمكنه إنشاؤها من البادئة /48؟",
+                options: ["16", "256", "4096", "65536"],
+                options_ar: ["16", "256", "4096", "65536"],
+                correct: [3],
+                explanation: "The default subnet boundary in IPv6 is /64. From /48 to /64 gives 16 bits for subnetting (64 - 48 = 16). 2^16 = 65,536 subnets.",
+                explanation_ar: "الحد الفاصل الافتراضي للشبكة في IPv6 هو /64. من /48 إلى /64 يوجد 16 بت مخصصة للتقسيم. 2 أس 16 = 65,536 شبكة فرعية."
+            },
+            {
+                id: 15,
+                type: "single",
+                q: "What type of IPv6 address is FE80::1?",
+                q_ar: "ما نوع عنوان IPv6 المعين كـ FE80::1؟",
+                options: ["loopback", "link-local", "multicast", "global unicast"],
+                options_ar: ["استرجاع (loopback)", "ارتباط محلي (link-local)", "بث متعدد (multicast)", "بث أحادي عام (global unicast)"],
+                correct: [1],
+                explanation: "IPv6 addresses starting with FE80::/10 are Link-Local Unicast addresses, used for communication with devices on the same local link.",
+                explanation_ar: "عناوين IPv6 التي تبدأ بـ FE80 تعتبر عناوين ارتباط محلي (Link-Local) وتُستخدم للاتصال الداخلي بين الأجهزة في نفس الشبكة فقط."
+            },
+            {
+                id: 16,
+                type: "matching",
+                q: "Match the IPv6 address with the correct IPv6 address type.",
+                q_ar: "قم بمطابقة عنوان IPv6 مع النوع (Type) الصحيح له.",
+                leftItems: [
+                    { text: "::1", letter: "A" },
+                    { text: "FF02::1", letter: "B" },
+                    { text: "FF02::1:FFAE:F85F", letter: "C" },
+                    { text: "2001:DB8::BAF:3F57:FE94", letter: "D" }
+                ],
+                leftItems_ar: [
+                    { text: "::1", letter: "A" },
+                    { text: "FF02::1", letter: "B" },
+                    { text: "FF02::1:FFAE:F85F", letter: "C" },
+                    { text: "2001:DB8::BAF:3F57:FE94", letter: "D" }
+                ],
+                rightItems: [
+                    { text: "loopback" },
+                    { text: "all node multicast" },
+                    { text: "solicited node multicast" },
+                    { text: "global unicast" }
+                ],
+                correctMatches: {
+                    0: 0,
+                    1: 1,
+                    2: 2,
+                    3: 3
+                },
+                explanation: "::1 is Loopback. FF02::1 targets all IPv6 nodes on a link. FF02::1:FF... is a Solicited Node Multicast used in NDP. 2001:... is a Global Unicast Address.",
+                explanation_ar: "العنوان ::1 هو للاختبار الذاتي. FF02::1 هو بث متعدد لكل العقد. FF02::1:FF هو بث متعدد للعقدة المطلوبة. 2001: يمثل عنوان إنترنت عام."
+            },
+            {
+                id: 17,
+                type: "single",
+                q: "Which service provides dynamic global IPv6 addressing to end devices without using a server that keeps a record of available IPv6 addresses?",
+                q_ar: "أي خدمة توفر تخصيصاً ديناميكياً لعناوين IPv6 العامة للأجهزة النهائية بدون الحاجة إلى خادم يحتفظ بسجل العناوين المتاحة؟",
+                options: [
+                    "stateful DHCPv6",
+                    "SLAAC",
+                    "static IPv6 addressing",
+                    "stateless DHCPv6"
+                ],
+                options_ar: [
+                    "خادم DHCPv6 ذو حالة (Stateful)",
+                    "SLAAC (التكوين التلقائي عديم الحالة)",
+                    "عنونة ثابتة (Static IPv6)",
+                    "خادم DHCPv6 عديم الحالة (Stateless)"
+                ],
+                correct: [1],
+                explanation: "SLAAC (Stateless Address Autoconfiguration) allows devices to generate their own IPv6 addresses using network prefixes advertised by local routers via ICMPv6.",
+                explanation_ar: "خدمة SLAAC تسمح للأجهزة بتوليد عناوينها تلقائياً باستخدام البادئة التي يعلنها الموجه، ولا تعتمد على خادم يتتبع من أخذ أي عنوان (عديمة الحالة)."
+            },
+            {
+                id: 18,
+                type: "matching",
+                q: "Three methods allow IPv6 and IPv4 to co-exist. Match each method with its description.",
+                q_ar: "هناك 3 طرق تسمح بتعايش IPv4 و IPv6 معاً. طابق كل طريقة بوصفها.",
+                leftItems: [
+                    { text: "The IPv4 packets and IPv6 packets coexist in the same network", letter: "A" },
+                    { text: "The IPv6 packet is transported inside an IPv4 packet", letter: "B" },
+                    { text: "IPv6 packets are converted into IPv4 packets, and vice versa", letter: "C" }
+                ],
+                leftItems_ar: [
+                    { text: "تتواجد حزم IPv4 و IPv6 وتعملان معاً في نفس الشبكة والجهاز", letter: "A" },
+                    { text: "يتم نقل وتغليف حزمة IPv6 بداخل حزمة IPv4 للعبور", letter: "B" },
+                    { text: "يتم تحويل وترجمة حزم IPv6 إلى IPv4 والعكس", letter: "C" }
+                ],
+                rightItems: [
+                    { text: "dual-stack" },
+                    { text: "tunneling" },
+                    { text: "translation" }
+                ],
+                correctMatches: {
+                    0: 0,
+                    1: 1,
+                    2: 2
+                },
+                explanation: "Dual-stack means both protocol stacks run simultaneously. Tunneling encapsulates one protocol within another. Translation (like NAT64) converts the headers between versions.",
+                explanation_ar: "المكدس المزدوج (Dual-stack) يشغل البروتوكولين معاً. النفق (Tunneling) يغلف الحزمة بأخرى. الترجمة (Translation) تحول العناوين بين الإصدارين."
+            },
+            {
+                id: 19,
+                type: "single",
+                q: "Refer to the exhibit. An administrator is trying to troubleshoot connectivity between PC1 and PC2 and uses the tracert command from PC1 to do it. Based on the displayed output, where should the administrator begin troubleshooting?",
+                q_ar: "بالرجوع للمخرجات، يحاول مسؤول استكشاف مشاكل الاتصال بين PC1 و PC2 ويستخدم أمر tracert. بناءً على المخرجات، من أين يجب أن يبدأ البحث عن المشكلة؟",
+                hasExhibit: "tracert-exhibit",
+                options: ["R1", "SW2", "R2", "SW1"],
+                options_ar: ["الموجه R1", "المبدل SW2", "الموجه R2", "المبدل SW1"],
+                correct: [0],
+                explanation: "The traceroute output only shows a successful hop at 172.20.0.254 (which is R1, the default gateway). Everything after that drops. Therefore, the issue lies either at R1 or the link connecting R1 to the next device.",
+                explanation_ar: "مخرجات الـ Tracert تُظهر استجابة ناجحة فقط من القفزة الأولى (172.20.0.254 وهو R1 البوابة الافتراضية). كل ما بعده مفقود، لذا المشكلة تبدأ من R1 أو مساره التالي."
+            },
+            {
+                id: 20,
+                type: "single",
+                q: "Which ICMPv6 message is sent when the IPv6 hop limit field of a packet is decremented to zero and the packet cannot be forwarded?",
+                q_ar: "أي رسالة من رسائل ICMPv6 يتم إرسالها عندما يصل حقل (hop limit) في حزمة IPv6 إلى الصفر ولا يمكن توجيه الحزمة؟",
+                options: ["network unreachable", "time exceeded", "protocol unreachable", "port unreachable"],
+                options_ar: ["الشبكة غير قابلة للوصول", "تجاوز الوقت (time exceeded)", "البروتوكول غير قابل للوصول", "المنفذ غير قابل للوصول"],
+                correct: [1],
+                explanation: "When the IPv6 Hop Limit reaches 0, the router drops the packet and sends an ICMPv6 Time Exceeded message back to the source to prevent infinite routing loops.",
+                explanation_ar: "عندما يصل عداد القفزات (Hop Limit) للصفر، يُسقط الموجه الحزمة ويرسل رسالة 'Time Exceeded' (تجاوز الوقت) للمرسل لمنع دوران الحزمة اللانهائي."
+            },
+            {
+                id: 21,
+                type: "matching",
+                q: "Match each description with an appropriate IP address type.",
+                q_ar: "طابق كل وصف مع نوع عنوان الـ IP المناسب له.",
+                leftItems: [
+                    { text: "169.254.1.5", letter: "A" },
+                    { text: "192.0.2.123", letter: "B" },
+                    { text: "240.2.6.255", letter: "C" },
+                    { text: "172.19.20.5", letter: "D" },
+                    { text: "127.0.0.1", letter: "E" }
+                ],
+                leftItems_ar: [
+                    { text: "169.254.1.5", letter: "A" },
+                    { text: "192.0.2.123", letter: "B" },
+                    { text: "240.2.6.255", letter: "C" },
+                    { text: "172.19.20.5", letter: "D" },
+                    { text: "127.0.0.1", letter: "E" }
+                ],
+                rightItems: [
+                    { text: "a link-local address" },
+                    { text: "a TEST-NET address" },
+                    { text: "an experimental address" },
+                    { text: "a private address" },
+                    { text: "a loopback address" }
+                ],
+                correctMatches: {
+                    0: 0,
+                    1: 1,
+                    2: 2,
+                    3: 3,
+                    4: 4
+                },
+                explanation: "169.254.x.x is APIPA/Link-Local. 192.0.2.x is TEST-NET documentation. 240.x.x.x is Experimental. 172.16-31.x.x is Private. 127.x.x.x is Loopback.",
+                explanation_ar: "169.254 محلي تلقائي (APIPA). 192.0.2 للاختبار والتوثيق (TEST-NET). 240+ للتجارب. 172.19 خاص داخلي. 127.0.0.1 هو للـ Loopback."
+            },
+            {
+                id: 22,
+                type: "single",
+                q: "A user issues a ping 192.135.250.103 command and receives a response that includes a code of 1. What does this code represent?",
+                q_ar: "قام مستخدم بإصدار أمر ping واستلم رداً يتضمن الكود 1 (Code 1) في رسالة ICMPv4. ماذا يمثل هذا الكود؟",
+                options: ["host unreachable", "protocol unreachable", "port unreachable", "network unreachable"],
+                options_ar: ["المضيف غير قابل للوصول (host unreachable)", "البروتوكول غير قابل للوصول", "المنفذ غير قابل للوصول", "الشبكة غير قابلة للوصول"],
+                correct: [0],
+                explanation: "In ICMPv4 Type 3 (Destination Unreachable) messages, Code 0 means Network Unreachable, Code 1 means Host Unreachable, Code 2 means Protocol Unreachable, and Code 3 means Port Unreachable.",
+                explanation_ar: "في رسائل ICMPv4 (النوع 3): الكود 0 يعني الشبكة غير موجودة، والكود 1 يعني أن المضيف المعين داخل الشبكة غير قابل للوصول (قد يكون مغلقاً)."
+            },
+            {
+                id: 23,
+                type: "multi",
+                selectCount: 3,
+                q: "Open the PT Activity. What are the three IPv6 addresses displayed when the route from PC1 to PC2 is traced? (Choose three.)",
+                q_ar: "وفقاً لمحاكاة Packet Tracer لعملية Tracert في بيئة IPv6، ما هي العناوين الثلاثة التي تظهر على مسار التوجيه؟ (اختر ثلاثة)",
+                options: [
+                    "2001:DB8:1:1::1",
+                    "2001:DB8:1:1::A",
+                    "2001:DB8:1:2::1",
+                    "2001:DB8:1:3::1",
+                    "2001:DB8:1:3::2",
+                    "2001:DB8:1:4::1"
+                ],
+                options_ar: [
+                    "2001:DB8:1:1::1",
+                    "2001:DB8:1:1::A",
+                    "2001:DB8:1:2::1",
+                    "2001:DB8:1:3::1",
+                    "2001:DB8:1:3::2",
+                    "2001:DB8:1:4::1"
+                ],
+                correct: [0, 2, 4],
+                explanation: "In this specific PT scenario, the traceroute hits the gateway 2001:DB8:1:1::1, then the next router at 2001:DB8:1:2::1, and finally the hop before the target at 2001:DB8:1:3::2.",
+                explanation_ar: "تتبع المسار في هذا السيناريو يسجل قفزات الموجهات الوسيطة في مسار الـ IPv6 وهي البوابات: الشبكة الفرعية 1 و 2 و 3 على التوالي (بناءً على تمرين سيسكو)."
+            },
+            {
+                id: 24,
+                type: "single",
+                q: "A user issues a ping 2001:db8:FACE:39::10 command and receives a response that includes a code of 3. What does this code represent?",
+                q_ar: "أرسل مستخدم أمر ping لعنوان IPv6 واستلم رسالة ICMPv6 تحتوي على الكود 3 (Code 3). ماذا يمثل هذا الكود؟",
+                options: ["address unreachable", "network unreachable", "host unreachable", "protocol unreachable"],
+                options_ar: ["العنوان غير قابل للوصول (address unreachable)", "الشبكة غير قابلة للوصول", "المضيف غير قابل للوصول", "البروتوكول غير قابل للوصول"],
+                correct: [0],
+                explanation: "In ICMPv6 Destination Unreachable (Type 1) messages: Code 0 = No route, Code 1 = Admin prohibited, Code 2 = Beyond scope, Code 3 = Address unreachable (can't resolve MAC/Layer 2), Code 4 = Port unreachable.",
+                explanation_ar: "في ICMPv6: الكود 0 = لا يوجد مسار، الكود 3 = العنوان غير قابل للوصول (الموجه وصل للشبكة لكنه فشل في العثور على الماك الخاص بالهدف)."
+            },
+            {
+                id: 25,
+                type: "single",
+                q: "A user issues a ping fe80:65ab:dcc1::100 command and receives a response that includes a code of 4. What does this code represent?",
+                q_ar: "استلم المستخدم رداً بـ ICMPv6 Code 4. ماذا يعني هذا الكود؟",
+                options: ["port unreachable", "host unreachable", "protocol unreachable", "network unreachable"],
+                options_ar: ["المنفذ غير قابل للوصول (port unreachable)", "المضيف غير قابل للوصول", "البروتوكول غير قابل للوصول", "الشبكة غير قابلة للوصول"],
+                correct: [0],
+                explanation: "ICMPv6 Code 4 stands for Port Unreachable. The packet successfully reached the destination host, but the targeted application port is closed or not listening.",
+                explanation_ar: "الكود 4 في ICMPv6 يعني أن الحزمة وصلت للجهاز الهدف بنجاح، لكن المنفذ المطلوب (مثل منفذ لبرنامج معين) مغلق أو لا يستجيب."
+            }
+        ];
+    </script>
+
+    <script type="text/babel">
+        function App() {
+            const [view, setView] = useState('start'); // 'start' | 'quiz' | 'result'
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [selectedIndices, setSelectedIndices] = useState([]);
+            const [isSubmitted, setIsSubmitted] = useState(false);
+            const [arabicTranslation, setArabicTranslation] = useState(false);
+            const [wrongAnswers, setWrongAnswers] = useState([]);
+            const [isDarkMode, setIsDarkMode] = useState(false);
+            
+            // Matching state logic
+            const [matchingState, setMatchingState] = useState({});
+            const [activeLeftItem, setActiveLeftItem] = useState(null);
+            const [pinCoords, setPinCoords] = useState({});
+            const containerRef = useRef(null);
+            const currentQ = quizData[currentIndex];
+
+            // Theme Effect
+            useEffect(() => {
+                if (isDarkMode) {
+                    document.body.classList.add('dark');
+                    document.body.classList.remove('light');
+                } else {
+                    document.body.classList.add('light');
+                    document.body.classList.remove('dark');
+                }
+            }, [isDarkMode]);
+
+            const calculatePinCoordinates = () => {
+                if (!containerRef.current || currentQ.type !== 'matching') return;
+                
+                setTimeout(() => {
+                    const parentRect = containerRef.current.getBoundingClientRect();
+                    const newCoords = {};
+
+                    currentQ.leftItems.forEach((_, idx) => {
+                        const pinEl = document.getElementById(`left-pin-${idx}`);
+                        if (pinEl) {
+                            const rect = pinEl.getBoundingClientRect();
+                            newCoords[`left-${idx}`] = {
+                                x: rect.left - parentRect.left + rect.width / 2,
+                                y: rect.top - parentRect.top + rect.height / 2
+                            };
+                        }
+                    });
+
+                    currentQ.rightItems.forEach((_, idx) => {
+                        const pinEl = document.getElementById(`right-pin-${idx}`);
+                        if (pinEl) {
+                            const rect = pinEl.getBoundingClientRect();
+                            newCoords[`right-${idx}`] = {
+                                x: rect.left - parentRect.left + rect.width / 2,
+                                y: rect.top - parentRect.top + rect.height / 2
+                            };
+                        }
+                    });
+
+                    setPinCoords(newCoords);
+                }, 100);
+            };
+
+            useEffect(() => {
+                calculatePinCoordinates();
+                window.addEventListener('resize', calculatePinCoordinates);
+                return () => window.removeEventListener('resize', calculatePinCoordinates);
+            }, [currentIndex, view]);
+
+            const resetQuiz = () => {
+                setCurrentIndex(0);
+                setScore(0);
+                setSelectedIndices([]);
+                setMatchingState({});
+                setActiveLeftItem(null);
+                setIsSubmitted(false);
+                setWrongAnswers([]);
+                setView('start');
+            };
+
+            const toggleOption = (idx) => {
+                if (isSubmitted) return;
+                if (currentQ.type === 'single') {
+                    setSelectedIndices([idx]);
+                } else {
+                    if (selectedIndices.includes(idx)) {
+                        setSelectedIndices(prev => prev.filter(item => item !== idx));
+                    } else {
+                        if (selectedIndices.length < currentQ.selectCount) {
+                            setSelectedIndices(prev => [...prev, idx]);
+                        }
+                    }
+                }
+            };
+
+            const selectLeftPin = (leftIdx) => {
+                if (isSubmitted) return;
+                setActiveLeftItem(leftIdx);
+            };
+
+            const selectRightPin = (rightIdx) => {
+                if (isSubmitted || activeLeftItem === null) return;
+                
+                setMatchingState(prev => {
+                    const newState = { ...prev };
+                    Object.keys(newState).forEach(key => {
+                        if (newState[key] === rightIdx) delete newState[key];
+                    });
+                    newState[activeLeftItem] = rightIdx;
+                    return newState;
+                });
+                setActiveLeftItem(null);
+                calculatePinCoordinates();
+            };
+
+            const handleSubmitAnswer = () => {
+                if (isSubmitted) return;
+
+                if (currentQ.type === 'matching') {
+                    if (Object.keys(matchingState).length < currentQ.leftItems.length) return;
+                    let isCorrect = true;
+                    currentQ.leftItems.forEach((_, idx) => {
+                        if (matchingState[idx] !== currentQ.correctMatches[idx]) isCorrect = false;
+                    });
+                    if (isCorrect) setScore(prev => prev + 1);
+                    else setWrongAnswers(prev => [...prev, { question: currentQ, userSelection: { ...matchingState }, type: 'matching' }]);
+                } else {
+                    if (selectedIndices.length === 0) return;
+                    const sortedSelected = [...selectedIndices].sort();
+                    const sortedCorrect = [...currentQ.correct].sort();
+                    const isCorrect = JSON.stringify(sortedSelected) === JSON.stringify(sortedCorrect);
+                    
+                    if (isCorrect) setScore(prev => prev + 1);
+                    else setWrongAnswers(prev => [...prev, { question: currentQ, userSelection: selectedIndices, type: currentQ.type }]);
+                }
+                setIsSubmitted(true);
+            };
+
+            const nextQuestion = () => {
+                if (currentIndex < quizData.length - 1) {
+                    setCurrentIndex(prev => prev + 1);
+                    setSelectedIndices([]);
+                    setMatchingState({});
+                    setActiveLeftItem(null);
+                    setIsSubmitted(false);
+                } else {
+                    setView('result');
+                }
+            };
+
+            const progress = ((currentIndex + 1) / quizData.length) * 100;
+            const pinColors = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+
+            const renderExhibit = (exhibitType) => {
+                if (exhibitType === 'network-172') {
+                    return (
+                        <div className="mb-6 p-4 rounded-2xl glass-card flex flex-col items-center">
+                            <span className="text-xs font-semibold mb-4 opacity-70 block w-full text-center">Network Topology</span>
+                            <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+                                {/* Router A Side */}
+                                <div className="flex flex-col items-center gap-2 relative">
+                                    <div className="w-16 h-8 rounded-full border-2 border-emerald-500 flex items-center justify-center font-bold text-xs bg-emerald-500/20">Router A</div>
+                                    <div className="w-1 h-6 bg-slate-500"></div>
+                                    <div className="w-16 h-6 border-2 border-slate-500 rounded bg-slate-500/20 text-[10px] flex items-center justify-center">Switch</div>
+                                    <div className="w-1 h-6 bg-slate-500"></div>
+                                    <i className="fas fa-desktop text-2xl text-slate-400"></i>
+                                    {/* Subnet Label */}
+                                    <div className="absolute top-10 -left-28 font-mono text-xs font-bold px-2 py-1 rounded bg-slate-500/20">
+                                        172.16.16.0 /22
+                                    </div>
+                                </div>
+                                {/* WAN Link */}
+                                <div className="hidden md:flex items-center text-red-500">
+                                    <i className="fas fa-bolt"></i><div className="w-12 h-0.5 bg-red-500"></div><i className="fas fa-bolt"></i>
+                                </div>
+                                {/* Router B Side */}
+                                <div className="flex flex-col items-center gap-2">
+                                    <div className="w-16 h-8 rounded-full border-2 border-emerald-500 flex items-center justify-center font-bold text-xs bg-emerald-500/20">Router B</div>
+                                    <div className="w-1 h-6 bg-slate-500"></div>
+                                    <div className="w-16 h-6 border-2 border-slate-500 rounded bg-slate-500/20 text-[10px] flex items-center justify-center">Switch</div>
+                                    <div className="w-1 h-6 bg-slate-500"></div>
+                                    <i className="fas fa-desktop text-2xl text-slate-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+                if (exhibitType === 'tracert-exhibit') {
+                    return (
+                        <div className="terminal-box p-4 rounded-xl text-xs mb-6 overflow-x-auto shadow-inner border border-opacity-50 font-mono">
+                            <div className="mb-2 opacity-70">PC&gt; tracert www.cisco.com</div>
+                            <div>Tracing route to 172.24.2.1 over a maximum of 30 hops:</div>
+                            <div className="mt-2 text-[10px] md:text-xs leading-relaxed">
+                                1 &nbsp; 1 ms &nbsp; 0 ms &nbsp; 0 ms &nbsp; 172.20.0.254<br/>
+                                2 &nbsp; 0 ms &nbsp; 0 ms &nbsp; 0 ms &nbsp; 172.20.1.18<br/>
+                                3 &nbsp; 1 ms &nbsp; 1 ms &nbsp; 1 ms &nbsp; 172.20.1.1<br/>
+                                4 &nbsp; 2 ms &nbsp; 0 ms &nbsp; 1 ms &nbsp; 172.20.1.22<br/>
+                                5 &nbsp; 2 ms &nbsp; 2 ms &nbsp; 2 ms &nbsp; 172.24.255.17<br/>
+                                6 &nbsp; 2 ms &nbsp; 2 ms &nbsp; 3 ms &nbsp; 172.24.255.13<br/>
+                                7 &nbsp; 2 ms &nbsp; 1 ms &nbsp; 2 ms &nbsp; 172.24.255.4<br/>
+                                8 &nbsp; 3 ms &nbsp; 1 ms &nbsp; 1 ms &nbsp; 172.24.2.1
+                            </div>
+                            <div className="mt-2 opacity-70">Trace complete.</div>
+                        </div>
+                    );
+                }
+                return null;
+            };
+
+            if (view === 'start') {
+                return (
+                    <div className="min-h-[85vh] flex items-center justify-center p-4">
+                        <div className="glass-card max-w-3xl w-full p-8 md:p-12 rounded-3xl text-center relative overflow-hidden transition-colors">
+                            {/* Theme Toggle in Start Screen */}
+                            <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-6 right-6 w-10 h-10 rounded-full bg-opacity-20 flex items-center justify-center text-xl transition-all hover:scale-110" style={{ backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
+                                <i className={`fas ${isDarkMode ? 'fa-sun text-amber-400' : 'fa-moon text-indigo-600'}`}></i>
+                            </button>
+
+                            <div className="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl shadow-lg shadow-blue-500/30">
+                                <i className="fas fa-sitemap"></i>
+                            </div>
+                            <h1 className="text-3xl md:text-5xl font-extrabold mb-3 tracking-wide">CCNA Modules 11-13</h1>
+                            <p className="font-semibold text-lg md:text-xl opacity-80 mb-8">IP Addressing Exam Simulator</p>
+                            
+                            <div className="grid grid-cols-3 gap-4 mb-8">
+                                <div className="p-4 rounded-2xl option-card">
+                                    <span className="block text-blue-500 font-bold text-3xl">{quizData.length}</span>
+                                    <span className="text-xs mt-1 block opacity-70">Questions</span>
+                                </div>
+                                <div className="p-4 rounded-2xl option-card">
+                                    <span className="block text-emerald-500 font-bold text-3xl">IPv4/v6</span>
+                                    <span className="text-xs mt-1 block opacity-70">Subnetting</span>
+                                </div>
+                                <div className="p-4 rounded-2xl option-card">
+                                    <span className="block text-purple-500 font-bold text-3xl">100%</span>
+                                    <span className="text-xs mt-1 block opacity-70">Match</span>
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={() => setView('quiz')}
+                                className="w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.01] shadow-xl text-lg"
+                            >
+                                Start Exam
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (view === 'result') {
+                const percentage = (score / quizData.length) * 100;
+                return (
+                    <div className="min-h-screen py-6">
+                        <div className="glass-card max-w-4xl w-full mx-auto p-6 md:p-10 rounded-3xl">
+                            <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-2">Exam Result</h2>
+                            <p className="opacity-70 text-center mb-8">Modules 11-13: IP Addressing</p>
+                            
+                            <div className="grid md:grid-cols-2 gap-8 items-center mb-8 p-6 rounded-2xl option-card">
+                                <div className="relative w-48 h-48 mx-auto">
+                                    <svg className="w-full h-full transform -rotate-90">
+                                        <circle cx="96" cy="96" r="82" stroke="currentColor" strokeOpacity="0.1" strokeWidth="12" fill="transparent" />
+                                        <circle 
+                                            cx="96" cy="96" r="82" 
+                                            stroke={percentage >= 75 ? "#10b981" : percentage >= 50 ? "#f59e0b" : "#ef4444"} 
+                                            strokeWidth="12" fill="transparent" 
+                                            strokeDasharray={515.2}
+                                            strokeDashoffset={515.2 - (515.2 * percentage) / 100}
+                                            className="transition-all duration-1000"
+                                        />
+                                    </svg>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span className="text-4xl font-extrabold">{Math.round(percentage)}%</span>
+                                        <span className="text-sm mt-1 opacity-70">{score} / {quizData.length} Correct</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h3 className="text-xl font-bold">Performance Assessment:</h3>
+                                    <div className="p-4 rounded-xl terminal-box opacity-90">
+                                        <p className="text-sm leading-relaxed italic">
+                                            {percentage >= 80 ? "Excellent achievement! You have mastered IPv4/IPv6 subnetting and ICMP messaging mechanics." : 
+                                             percentage >= 60 ? "Good work! Review your Subnet calculations and IPv6 address compression rules to maximize your score." : 
+                                             "Further study is required for these modules. Re-read the rules for SLAAC, ICMP codes, and IPv4 block allocations."}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {wrongAnswers.length > 0 && (
+                                <div className="mb-8">
+                                    <h3 className="text-xl font-bold text-red-500 mb-4 flex items-center gap-2">
+                                        <i className="fas fa-triangle-exclamation"></i>
+                                        Review Incorrect Answers ({wrongAnswers.length})
+                                    </h3>
+                                    <div className="space-y-5 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                                        {wrongAnswers.map((wa, wIdx) => (
+                                            <div key={wIdx} className="p-5 rounded-2xl option-card border border-red-500/20">
+                                                <p className="font-semibold text-sm mb-3">
+                                                    Q{wa.question.id}: {wa.question.q}
+                                                </p>
+                                                
+                                                {wa.type === 'matching' ? (
+                                                    <span className="text-xs text-red-500 block font-bold mb-2">Incorrect connections made.</span>
+                                                ) : (
+                                                    <div className="grid md:grid-cols-2 gap-4 my-2">
+                                                        <div className="p-3 rounded-xl border border-red-500/20 bg-red-500/5">
+                                                            <span className="text-xs text-red-500 block font-bold">Your Selection:</span>
+                                                            {wa.userSelection.map(sIdx => (
+                                                                <div key={sIdx} className="text-xs mt-1 opacity-80">• {wa.question.options[sIdx]}</div>
+                                                            ))}
+                                                        </div>
+                                                        <div className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+                                                            <span className="text-xs text-emerald-500 block font-bold">Correct Solution:</span>
+                                                            {wa.question.correct.map(cIdx => (
+                                                                <div key={cIdx} className="text-xs mt-1 opacity-80">• {wa.question.options[cIdx]}</div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
+                                                <div className="text-xs mt-2 p-3 rounded-lg terminal-box opacity-90 border border-opacity-20">
+                                                    <strong className="block mb-1">Explanation:</strong>
+                                                    {wa.question.explanation}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <button 
+                                onClick={resetQuiz}
+                                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg"
+                            >
+                                Try Exam Again
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="w-full flex flex-col min-h-[90vh] py-4">
+                    {/* Header Controls */}
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-4 px-2">
+                        <button onClick={resetQuiz} className="opacity-70 hover:opacity-100 transition-opacity flex items-center gap-2 font-semibold">
+                            <i className="fas fa-arrow-left"></i> Exit
+                        </button>
+                        
+                        <div className="flex items-center gap-4">
+                            {/* Theme Toggle */}
+                            <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-8 h-8 rounded-full flex items-center justify-center text-lg transition-transform hover:scale-110">
+                                <i className={`fas ${isDarkMode ? 'fa-sun text-amber-400' : 'fa-moon text-indigo-600'}`}></i>
+                            </button>
+
+                            {/* Bilingual Toggle */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold opacity-70">عربي</span>
+                                <button 
+                                    onClick={() => setArabicTranslation(!arabicTranslation)}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${arabicTranslation ? 'bg-indigo-600' : 'bg-slate-400'}`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${arabicTranslation ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Timeline */}
+                    <div className="mb-6 flex gap-2 overflow-x-auto pb-3 custom-scrollbar px-2">
+                        {quizData.map((q, idx) => {
+                            let dotStyle = "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all border ";
+                            if (idx === currentIndex) {
+                                dotStyle += "bg-blue-600 text-white border-blue-400 scale-110 shadow-lg shadow-blue-500/30";
+                            } else if (idx < currentIndex) {
+                                dotStyle += "option-card opacity-80 border-blue-500/30 text-blue-500";
+                            } else {
+                                dotStyle += "option-card opacity-50 border-opacity-10";
+                            }
+                            return (
+                                <button key={idx} onClick={() => jumpToQuestion(idx)} className={dotStyle}>{q.id}</button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex justify-between text-xs font-bold opacity-60 mb-2 px-3">
+                        <span>Question {currentIndex + 1} of {quizData.length}</span>
+                        <span>{Math.round(progress)}%</span>
+                    </div>
+                    <div className="w-full option-card h-2 rounded-full mb-6 overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full progress-bar" style={{ width: `${progress}%` }}></div>
+                    </div>
+
+                    {/* Question Card */}
+                    <div className="glass-card p-6 md:p-8 rounded-3xl shadow-xl flex-grow flex flex-col justify-between">
+                        <div>
+                            <div className="flex justify-between items-center mb-5">
+                                <span className="option-card text-xs px-3 py-1 rounded-full font-semibold uppercase tracking-wider text-indigo-500 border border-indigo-500/20">
+                                    {currentQ.type === 'single' ? 'Single Choice' : currentQ.type === 'matching' ? 'Point A to B Matcher' : `Multi-Select (${currentQ.selectCount})`}
+                                </span>
+                                <span className="text-xs opacity-50 font-mono">Q-ID: {currentQ.id}</span>
+                            </div>
+
+                            <h2 className="text-lg md:text-xl font-bold mb-6 leading-relaxed">
+                                {arabicTranslation ? currentQ.q_ar : currentQ.q}
+                            </h2>
+
+                            {currentQ.hasExhibit && renderExhibit(currentQ.hasExhibit)}
+
+                            {/* Matcher UI */}
+                            {currentQ.type === 'matching' ? (
+                                <div className="space-y-4 mb-8 relative" ref={containerRef}>
+                                    <div className="option-card p-3 rounded-xl text-xs text-indigo-500 mb-6 border flex justify-between items-center">
+                                        <span>
+                                            <i className="fas fa-info-circle mr-1.5"></i>
+                                            {arabicTranslation ? "انقر على دائرة اليسار ثم الدائرة المطابقة باليمين للتوصيل" : "Click a pin on the left, then click its matching pin on the right."}
+                                        </span>
+                                        {!isSubmitted && (
+                                            <button onClick={() => {setMatchingState({}); setActiveLeftItem(null);}} className="text-[10px] px-2 py-1 rounded border opacity-80 hover:opacity-100">Reset</button>
+                                        )}
+                                    </div>
+
+                                    <svg className="absolute inset-0 pointer-events-none w-full h-full z-10" style={{ minHeight: '250px' }}>
+                                        {Object.keys(matchingState).map((leftKey) => {
+                                            const leftIdx = parseInt(leftKey);
+                                            const rightIdx = matchingState[leftIdx];
+                                            const start = pinCoords[`left-${leftIdx}`];
+                                            const end = pinCoords[`right-${rightIdx}`];
+                                            if (!start || !end) return null;
+
+                                            const color = pinColors[leftIdx % pinColors.length];
+                                            const isCorrect = isSubmitted && matchingState[leftIdx] === currentQ.correctMatches[leftIdx];
+                                            const strokeColor = isSubmitted ? (isCorrect ? '#10b981' : '#ef4444') : color;
+
+                                            return (
+                                                <g key={leftKey}>
+                                                    <path 
+                                                        d={`M ${start.x} ${start.y} C ${(start.x + end.x)/2} ${start.y}, ${(start.x + end.x)/2} ${end.y}, ${end.x} ${end.y}`}
+                                                        fill="none" stroke={strokeColor} strokeWidth={isSubmitted ? "3" : "4"}
+                                                        className={!isSubmitted ? "connecting-line" : ""} opacity="0.85"
+                                                    />
+                                                    <circle cx={start.x} cy={start.y} r="6" fill={strokeColor} />
+                                                    <circle cx={end.x} cy={end.y} r="6" fill={strokeColor} />
+                                                </g>
+                                            );
+                                        })}
+                                    </svg>
+
+                                    <div className="grid grid-cols-2 gap-8 md:gap-16 items-start relative z-20">
+                                        <div className="space-y-4">
+                                            {(arabicTranslation ? currentQ.leftItems_ar : currentQ.leftItems).map((leftItem, idx) => {
+                                                const isConnected = matchingState[idx] !== undefined;
+                                                const isActive = activeLeftItem === idx;
+                                                const color = pinColors[idx % pinColors.length];
+                                                return (
+                                                    <div key={idx} className={`flex items-center gap-3 p-3 md:p-4 rounded-xl border transition-all ${isActive ? 'shadow-lg border-indigo-500 bg-indigo-500/10' : 'option-card'}`}>
+                                                        <div 
+                                                            id={`left-pin-${idx}`}
+                                                            onClick={() => selectLeftPin(idx)}
+                                                            className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm z-30 transition-transform ${!isConnected ? 'pin-unmatched hover:scale-110 border-2' : ''}`}
+                                                            style={isConnected ? { backgroundColor: color, color: '#fff', border: `2px solid ${color}` } : {}}
+                                                        >
+                                                            {leftItem.letter}
+                                                        </div>
+                                                        <div className="flex-1 text-xs md:text-sm font-medium leading-tight opacity-90">{leftItem.text}</div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            {currentQ.rightItems.map((rightItem, idx) => {
+                                                const matchedLeftIdx = Object.keys(matchingState).find(key => matchingState[key] === idx);
+                                                const isConnected = matchedLeftIdx !== undefined;
+                                                const color = isConnected ? pinColors[parseInt(matchedLeftIdx) % pinColors.length] : '';
+                                                return (
+                                                    <div key={idx} className="flex items-center gap-3 p-3 md:p-4 rounded-xl border option-card transition-all">
+                                                        <div 
+                                                            id={`right-pin-${idx}`}
+                                                            onClick={() => selectRightPin(idx)}
+                                                            className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm z-30 transition-transform ${!isConnected ? 'match-target border-2 border-dashed hover:scale-110' : ''}`}
+                                                            style={isConnected ? { backgroundColor: color, color: '#fff', border: `2px solid ${color}` } : {}}
+                                                        >
+                                                            {isConnected ? currentQ.leftItems[parseInt(matchedLeftIdx)].letter : '?'}
+                                                        </div>
+                                                        <div className="flex-1 text-xs md:text-sm font-mono opacity-90 leading-tight">{rightItem.text}</div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3 mb-8">
+                                    {currentQ.options.map((opt, idx) => {
+                                        const isSelected = selectedIndices.includes(idx);
+                                        const isCorrectOpt = currentQ.correct.includes(idx);
+                                        
+                                        let cardClass = "w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center justify-between cursor-pointer ";
+                                        if (!isSubmitted) {
+                                            cardClass += isSelected ? "border-blue-500 bg-blue-500/10 shadow-md text-blue-600 dark:text-blue-300" : "option-card";
+                                        } else {
+                                            if (isCorrectOpt) cardClass += "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold";
+                                            else if (isSelected) cardClass += "border-red-500 bg-red-500/10 text-red-600 dark:text-red-400";
+                                            else cardClass += "option-card opacity-50";
+                                        }
+
+                                        return (
+                                            <div key={idx} onClick={() => toggleOption(idx)} className={cardClass}>
+                                                <div className="flex items-center gap-3.5 flex-1">
+                                                    <div className="flex-shrink-0">
+                                                        {currentQ.type === 'single' ? (
+                                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-400'}`}>
+                                                                {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
+                                                            </div>
+                                                        ) : (
+                                                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-400'}`}>
+                                                                {isSelected && <i className="fas fa-check text-[10px] text-white"></i>}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-sm md:text-base">{arabicTranslation ? currentQ.options_ar[idx] : opt}</span>
+                                                </div>
+                                                {isSubmitted && (
+                                                    <div className="flex-shrink-0 ml-2">
+                                                        {isCorrectOpt && <i className="fas fa-check-circle text-emerald-500 text-lg"></i>}
+                                                        {isSelected && !isCorrectOpt && <i className="fas fa-times-circle text-red-500 text-lg"></i>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {isSubmitted && (
+                                <div className="p-5 rounded-2xl mb-8 terminal-box border-opacity-20 animate-fadeIn border">
+                                    <h4 className="font-bold mb-2 flex items-center text-amber-500 dark:text-amber-400 text-sm">
+                                        <i className="fas fa-lightbulb mr-2"></i> Explanation / الشرح:
+                                    </h4>
+                                    <p className="text-sm leading-relaxed mb-3 opacity-90">{currentQ.explanation}</p>
+                                    <p className="text-sm leading-relaxed border-t border-opacity-20 pt-3 opacity-90">{currentQ.explanation_ar}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div>
+                            {!isSubmitted ? (
+                                <button 
+                                    onClick={handleSubmitAnswer}
+                                    disabled={currentQ.type === 'matching' ? Object.keys(matchingState).length < currentQ.leftItems.length : selectedIndices.length === 0}
+                                    className={`w-full font-bold py-4 rounded-2xl transition-all shadow-lg text-white ${
+                                        (currentQ.type === 'matching' ? Object.keys(matchingState).length === currentQ.leftItems.length : selectedIndices.length > 0)
+                                            ? 'bg-blue-600 hover:bg-blue-700 active:scale-95' 
+                                            : 'bg-gray-400 dark:bg-slate-700 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {currentQ.type === 'matching' ? 'Submit Matching' : 'Check Answer'}
+                                </button>
+                            ) : (
+                                <button onClick={nextQuestion} className="w-full bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 font-extrabold py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 group">
+                                    {currentIndex === quizData.length - 1 ? 'Finish Exam' : 'Next Question'}
+                                    <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
